@@ -1,0 +1,4 @@
+# Ignore everywhere in project
+.env
+.venv/
+venv/
