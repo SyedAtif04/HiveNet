@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from datetime import datetime
+from typing import Optional
 
 
 class TransactionCreate(BaseModel):
     type: str
     amount: float
-    category: str | None = None
-    description: str | None = None
-    date: datetime | None = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    date: Optional[str] = None  
