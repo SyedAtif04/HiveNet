@@ -9,8 +9,8 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 router = APIRouter()
 
 @router.post("/ocr")
-async def extract_text(file: UploadFile = File(...)):
-    contents = await file.read()
+def extract_text(file: UploadFile = File(...)):
+    contents = file.file.read()
     image = Image.open(io.BytesIO(contents))
 
     text = pytesseract.image_to_string(image)
