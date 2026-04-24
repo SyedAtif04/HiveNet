@@ -67,12 +67,13 @@ def get_monthly_summary(
 
 
 @router.get("/summary/predict")
-def predict_summary(db: Session = Depends(get_db)):
+def get_prediction(db: Session = Depends(get_db)):
     transactions = db.query(models.Transaction).all()
 
-    monthly_data = monthly_summary(transactions)
+    monthly = monthly_summary(transactions)
+    prediction = predict_financials(monthly)
 
-    return predict_financials(monthly_data)
+    return prediction
 
 @router.get("/summary/insights")
 def get_full_insights(db: Session = Depends(get_db)):

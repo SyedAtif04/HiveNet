@@ -68,17 +68,47 @@ def predict_next(values):
 
     return max(0, float(next_value))
 
+def forecast(values, steps=1):
+    if len(values) < 2:
+        return [values[-1]] * steps if values else [0] * steps
+
+    x = np.arange(len(values))
+    y = np.array(values)
+
+    coeffs = np.polyfit(x, y, 1)
+
+    predictions = []
+    for i in range(steps):
+        next_x = len(values) + i
+        val = np.polyval(coeffs, next_x)
+        predictions.append(max(0, float(val)))
+
+    return predictions
+
 def predict_financials(monthly_data):
     incomes = [m["income"] for m in monthly_data]
     expenses = [m["expense"] for m in monthly_data]
 
-    predicted_income = predict_next(incomes)
-    predicted_expense = predict_next(expenses)
+    def build(values_income, values_expense):
+        return {
+            "income": sum(values_income),
+            "expense": sum(values_expense),
+            "profit": sum(values_income) - sum(values_expense)
+        }
 
     return {
-        "predicted_income": predicted_income,
-        "predicted_expense": predicted_expense,
-        "predicted_profit": predicted_income - predicted_expense
+        "next_month": build(
+            forecast(incomes, 1),
+            forecast(expenses, 1)
+        ),
+        "next_quarter": build(
+            forecast(incomes, 3),
+            forecast(expenses, 3)
+        ),
+        "next_year": build(
+            forecast(incomes, 12),
+            forecast(expenses, 12)
+        )
     }
 
 def generate_insights(monthly_data):

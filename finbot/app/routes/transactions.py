@@ -4,6 +4,7 @@ from app.database import SessionLocal
 from app import models, schemas
 from datetime import datetime
 from fastapi import HTTPException
+from app.models import TransactionItem, Inventory
 
 router = APIRouter()
 
@@ -20,7 +21,7 @@ def get_db():
 def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(get_db)):
     data_dict = data.dict(exclude_unset=True)
 
-    # 👇 date parsing + error handling
+    # 👇 date parsing
     if "date" in data_dict and data_dict["date"]:
         try:
             data_dict["date"] = datetime.strptime(data_dict["date"], "%d-%m-%Y")
@@ -30,11 +31,45 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
                 detail="Date must be in format DD-MM-YYYY"
             )
 
+    # ❗ remove items from dict before creating transaction
+    items = data_dict.pop("items", [])
+
+    # ✅ create transaction
     transaction = models.Transaction(**data_dict)
 
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
+
+    # ✅ add items + update inventory
+    for item in items:
+        db_item = TransactionItem(
+            transaction_id=transaction.id,
+            product_name=item["product_name"],
+            quantity=item["quantity"],
+            price=item["price"]
+        )
+        db.add(db_item)
+
+        # 🔁 inventory update
+        existing = db.query(Inventory).filter_by(
+            product_name=item["product_name"]
+        ).first()
+
+        if not existing:
+            existing = Inventory(
+                product_name=item["product_name"],
+                quantity=0
+            )
+            db.add(existing)
+
+        if transaction.type == "income":
+            existing.quantity -= item["quantity"]
+        else:
+            existing.quantity += item["quantity"]
+
+    db.commit()
+
     return transaction
 
 @router.get("/transactions")
@@ -43,3 +78,4 @@ def get_transactions(db: Session = Depends(get_db)):
         .order_by(models.Transaction.date.desc())\
         .all()
     return transactions
+
