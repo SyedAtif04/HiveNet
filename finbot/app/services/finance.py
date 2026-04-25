@@ -54,61 +54,80 @@ def monthly_summary(transactions):
 
     return result
 
-def predict_next(values):
+def _forecast_linear(values, steps):
     if len(values) < 2:
-        return values[-1] if values else 0
-
+        return [float(values[-1])] * steps if values else [0.0] * steps
     x = np.arange(len(values))
-    y = np.array(values)
+    coeffs = np.polyfit(x, np.array(values), 1)
+    return [max(0.0, float(np.polyval(coeffs, len(values) + i))) for i in range(steps)]
 
-    # linear regression
-    coeffs = np.polyfit(x, y, 1)
 
-    next_value = np.polyval(coeffs, len(values))
+def _forecast_arima(values, steps):
+    from statsmodels.tsa.arima.model import ARIMA
+    model = ARIMA(values, order=(1, 1, 0))
+    fit = model.fit()
+    pred = fit.forecast(steps=steps)
+    return [max(0.0, float(v)) for v in pred]
 
-    return max(0, float(next_value))
 
-def forecast(values, steps=1):
-    if len(values) < 2:
-        return [values[-1]] * steps if values else [0] * steps
+def _forecast_prophet(dates, values, steps):
+    from prophet import Prophet
+    import pandas as pd
+    df = pd.DataFrame({
+        "ds": pd.to_datetime(dates, format="%Y-%m"),
+        "y": values
+    })
+    m = Prophet(
+        yearly_seasonality=(len(values) >= 12),
+        weekly_seasonality=False,
+        daily_seasonality=False
+    )
+    m.fit(df)
+    last = pd.to_datetime(dates[-1], format="%Y-%m")
+    future = pd.DataFrame({"ds": [last + pd.DateOffset(months=i + 1) for i in range(steps)]})
+    result = m.predict(future)
+    return [max(0.0, float(v)) for v in result["yhat"]]
 
-    x = np.arange(len(values))
-    y = np.array(values)
 
-    coeffs = np.polyfit(x, y, 1)
+def _forecast_best(dates, values, steps):
+    """Try Prophet → ARIMA → linear. Returns (predictions, method_name)."""
+    if len(values) >= 3:
+        try:
+            return _forecast_prophet(dates, values, steps), "prophet"
+        except Exception:
+            pass
+    if len(values) >= 3:
+        try:
+            return _forecast_arima(values, steps), "arima"
+        except Exception:
+            pass
+    return _forecast_linear(values, steps), "linear"
 
-    predictions = []
-    for i in range(steps):
-        next_x = len(values) + i
-        val = np.polyval(coeffs, next_x)
-        predictions.append(max(0, float(val)))
-
-    return predictions
 
 def predict_financials(monthly_data):
+    dates = [m["month"] for m in monthly_data]
     incomes = [m["income"] for m in monthly_data]
     expenses = [m["expense"] for m in monthly_data]
 
-    def build(values_income, values_expense):
+    income_1,  method = _forecast_best(dates, incomes,  1)
+    expense_1,      _  = _forecast_best(dates, expenses, 1)
+    income_3,       _  = _forecast_best(dates, incomes,  3)
+    expense_3,      _  = _forecast_best(dates, expenses, 3)
+    income_12,      _  = _forecast_best(dates, incomes,  12)
+    expense_12,     _  = _forecast_best(dates, expenses, 12)
+
+    def build(inc, exp):
         return {
-            "income": sum(values_income),
-            "expense": sum(values_expense),
-            "profit": sum(values_income) - sum(values_expense)
+            "income":  sum(inc),
+            "expense": sum(exp),
+            "profit":  sum(inc) - sum(exp)
         }
 
     return {
-        "next_month": build(
-            forecast(incomes, 1),
-            forecast(expenses, 1)
-        ),
-        "next_quarter": build(
-            forecast(incomes, 3),
-            forecast(expenses, 3)
-        ),
-        "next_year": build(
-            forecast(incomes, 12),
-            forecast(expenses, 12)
-        )
+        "next_month":   build(income_1,  expense_1),
+        "next_quarter": build(income_3,  expense_3),
+        "next_year":    build(income_12, expense_12),
+        "method": method
     }
 
 def generate_insights(monthly_data):

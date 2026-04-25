@@ -8,6 +8,7 @@ from app.database import SessionLocal
 from app import models
 from app.models import TransactionItem, Inventory
 from app.services.ocr_parser import parse_bill_text
+from app.services.categorizer import categorize
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
@@ -30,11 +31,14 @@ def extract_text(file: UploadFile = File(...), db: Session = Depends(get_db)):
     text = pytesseract.image_to_string(image)
     parsed = parse_bill_text(text)
 
+    item_names = [item["product_name"] for item in parsed["items"]]
+    category = categorize(item_names)
+
     # Create transaction record
     transaction = models.Transaction(
         type=parsed["type"],
         amount=parsed["amount"],
-        category="ocr-import",
+        category=category,
         description="Imported via OCR",
         date=datetime.now(timezone.utc)
     )
