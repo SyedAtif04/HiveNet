@@ -63,6 +63,8 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
             )
             db.add(existing)
 
+        existing.unit_price = item["price"]
+
         if transaction.type == "income":
             existing.quantity -= item["quantity"]
         else:
