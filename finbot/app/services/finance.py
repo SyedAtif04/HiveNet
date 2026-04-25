@@ -187,10 +187,10 @@ Profit: {summary['profit']}
 Monthly Breakdown:
 {monthly_text}
 
-Prediction:
-Next Income: {prediction['predicted_income']}
-Next Expense: {prediction['predicted_expense']}
-Next Profit: {prediction['predicted_profit']}
+Prediction (Next Month):
+Income: {prediction['next_month']['income']:.2f}
+Expense: {prediction['next_month']['expense']:.2f}
+Profit: {prediction['next_month']['profit']:.2f}
 
 Insights:
 {"; ".join(insights)}

@@ -59,6 +59,8 @@ def extract_text(file: UploadFile = File(...), db: Session = Depends(get_db)):
             existing = Inventory(product_name=item["product_name"], quantity=0)
             db.add(existing)
 
+        existing.unit_price = item["price"]
+
         if transaction.type == "income":
             existing.quantity -= item["quantity"]
         else:
