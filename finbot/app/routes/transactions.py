@@ -5,6 +5,7 @@ from app import models, schemas
 from datetime import datetime
 from fastapi import HTTPException
 from app.models import TransactionItem, Inventory
+from app.services.categorizer import categorize
 
 router = APIRouter()
 
@@ -33,6 +34,10 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
 
     # ❗ remove items from dict before creating transaction
     items = data_dict.pop("items", [])
+
+    if not data_dict.get("category") and items:
+        item_names = [i["product_name"] for i in items]
+        data_dict["category"] = categorize(item_names, data_dict.get("description", ""))
 
     # ✅ create transaction
     transaction = models.Transaction(**data_dict)
