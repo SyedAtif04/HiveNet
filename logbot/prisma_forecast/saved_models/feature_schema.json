@@ -1,0 +1,18 @@
+{
+  "selected_features": [
+    "material",
+    "month",
+    "total_cost",
+    "project_id",
+    "week_of_year",
+    "unit_price",
+    "is_weekend",
+    "day_of_month",
+    "day_of_week",
+    "quantity_lag_1",
+    "quarter"
+  ],
+  "total_features": 11,
+  "selection_method": "mutual_info_lightgbm",
+  "top_k": 30
+}

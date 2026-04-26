@@ -1,0 +1,96 @@
+{
+  "total_features": 11,
+  "selected_features": 11,
+  "selected": [
+    "material",
+    "month",
+    "total_cost",
+    "project_id",
+    "week_of_year",
+    "unit_price",
+    "is_weekend",
+    "day_of_month",
+    "day_of_week",
+    "quantity_lag_1",
+    "quarter"
+  ],
+  "scores": {
+    "project_id": {
+      "mi": 0.0,
+      "gain": 45235998.81036377,
+      "perm": 0.0,
+      "combined": 0.10078688439184313,
+      "selected": true
+    },
+    "material": {
+      "mi": 0.0,
+      "gain": 224414114.41241455,
+      "perm": 0.0,
+      "combined": 0.5,
+      "selected": true
+    },
+    "unit_price": {
+      "mi": 0.0,
+      "gain": 18926904.834960938,
+      "perm": 0.0,
+      "combined": 0.042169595447499854,
+      "selected": true
+    },
+    "total_cost": {
+      "mi": 0.0,
+      "gain": 54801856.15515137,
+      "perm": 0.0,
+      "combined": 0.12209984273636164,
+      "selected": true
+    },
+    "is_weekend": {
+      "mi": 0.0,
+      "gain": 18285773.222717285,
+      "perm": 0.0,
+      "combined": 0.04074113892211077,
+      "selected": true
+    },
+    "month": {
+      "mi": 0.0,
+      "gain": 159553910.3416748,
+      "perm": 0.0,
+      "combined": 0.3554899181796925,
+      "selected": true
+    },
+    "quarter": {
+      "mi": 0.0,
+      "gain": 1246330.5540771484,
+      "perm": 0.0,
+      "combined": 0.0027768542039800542,
+      "selected": true
+    },
+    "quantity_lag_1": {
+      "mi": 0.0,
+      "gain": 2521156.5697631836,
+      "perm": 0.0,
+      "combined": 0.005617196976144638,
+      "selected": true
+    },
+    "day_of_week": {
+      "mi": 0.0,
+      "gain": 3976032.2387695312,
+      "perm": 0.0,
+      "combined": 0.008858694670742996,
+      "selected": true
+    },
+    "day_of_month": {
+      "mi": 0.0,
+      "gain": 9273767.192749023,
+      "perm": 0.0,
+      "combined": 0.020662174518368884,
+      "selected": true
+    },
+    "week_of_year": {
+      "mi": 0.0,
+      "gain": 30497792.30883789,
+      "perm": 0.0,
+      "combined": 0.06794980874685741,
+      "selected": true
+    }
+  }
+}
