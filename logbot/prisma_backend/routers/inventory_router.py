@@ -10,9 +10,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.database import get_db
 import core.models as m
+from resolver import resolve_supplier_id
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -37,7 +39,7 @@ class SupplierCreate(BaseModel):
 
 class LinkSupplierRequest(BaseModel):
     sku_name: str        # matches inventory.product_name
-    supplier_id: str
+    supplier_name: str
     preferred: bool = False
 
 
@@ -88,12 +90,11 @@ def list_skus(db: Session = Depends(get_db)):
     return db.query(m.LogSKU).all()
 
 
-@router.get("/skus/{sku_id}")
-def get_sku(sku_id: str, db: Session = Depends(get_db)):
-    sku = db.query(m.LogSKU).filter_by(id=sku_id).first()
+@router.get("/skus/{sku_name}")
+def get_sku(sku_name: str, db: Session = Depends(get_db)):
+    sku = db.query(m.LogSKU).filter_by(name=sku_name).first()
     if not sku:
-        raise HTTPException(status_code=404, detail="SKU not found")
-    # also return the shared inventory row
+        raise HTTPException(status_code=404, detail=f"SKU '{sku_name}' not found")
     inv = db.query(m.Inventory).filter_by(product_name=sku.name).first()
     return {"sku": sku, "inventory": inv}
 
@@ -119,10 +120,11 @@ def link_supplier(data: LinkSupplierRequest, db: Session = Depends(get_db)):
     sku = db.query(m.LogSKU).filter_by(name=data.sku_name).first()
     if not sku:
         raise HTTPException(status_code=404, detail=f"SKU '{data.sku_name}' not found in log_skus")
-    link = m.LogSKUSupplier(sku_id=sku.id, supplier_id=data.supplier_id, preferred=data.preferred)
+    supplier_id = resolve_supplier_id(data.supplier_name, db)
+    link = m.LogSKUSupplier(sku_id=sku.id, supplier_id=supplier_id, preferred=data.preferred)
     db.add(link)
     db.commit()
-    return {"status": "linked", "sku_name": data.sku_name, "supplier_id": data.supplier_id}
+    return {"status": "linked", "sku_name": data.sku_name, "supplier_name": data.supplier_name}
 
 
 # ─── Stock level endpoints ────────────────────────────────────────────────────
