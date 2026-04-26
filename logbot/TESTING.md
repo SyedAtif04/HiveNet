@@ -9,7 +9,7 @@ All examples use `curl`. You can also use the interactive Swagger UI at `http://
 
 ```bash
 cd logbot/prisma_backend
-uvicorn main:app --reload --port 8000
+uvicorn prisma_backend.main:app --reload --port 8001
 ```
 
 Confirm it is running:

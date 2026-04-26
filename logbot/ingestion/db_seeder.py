@@ -211,20 +211,32 @@ def generate_stockout_training_data(db) -> List[Dict]:
         else:
             lead_time = float(DEFAULT_LEAD_TIME_DAYS)
 
-        # Simulate inventory trajectory day by day
+        # Simulate inventory trajectory with realistic delayed replenishment.
+        # Orders placed at ROP arrive after lead_time days — not instantly.
+        # This generates genuine stockout events when demand exceeds supply
+        # during the replenishment window.
         current_qty = max(safety_stock * 3.0, avg_daily * 30.0)
         days_since_last_reorder = 0
+        pending_orders: List[tuple] = []  # (arrival_day, qty)
+        day_idx = 0
 
         for daily_qty in quantities:
-            current_qty -= daily_qty
+            day_idx += 1
+
+            # Receive any orders that have arrived today
+            arrived = [q for (arr, q) in pending_orders if arr <= day_idx]
+            current_qty += sum(arrived)
+            pending_orders = [(arr, q) for (arr, q) in pending_orders if arr > day_idx]
+
+            # Stockout if we can't cover today's demand
+            stockout_occurred = 1 if current_qty < daily_qty else 0
+            current_qty = max(0.0, current_qty - daily_qty)
             days_since_last_reorder += 1
 
-            if current_qty <= rop:
-                current_qty += eoq
+            # Place a reorder when at or below ROP and nothing already on order
+            if current_qty <= rop and not pending_orders:
+                pending_orders.append((day_idx + max(1, int(lead_time)), eoq))
                 days_since_last_reorder = 0
-
-            # Label: stockout risk if remaining qty < expected demand over lead time
-            stockout_occurred = 1 if current_qty < (avg_daily * lead_time) else 0
 
             training_records.append({
                 'current_qty': round(float(current_qty), 2),

@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -15,6 +15,9 @@ from core.database import get_db
 import core.models as m
 from alerts.thresholds import check_thresholds
 from alerts.stockout_model import predict_stockout_probability, train_stockout_model
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from resolver import resolve_alert as _resolve_alert
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -43,6 +46,11 @@ class TrainingRecord(BaseModel):
     stockout_occurred: int
 
 
+class ResolveAlertRequest(BaseModel):
+    product_name: str
+    alert_type: Optional[str] = None
+
+
 # ─── Endpoints ───────────────────────────────────────────────────────────────
 
 @router.get("")
@@ -50,7 +58,9 @@ def get_alerts(resolved: bool = False, db: Session = Depends(get_db)):
     """List alerts. ?resolved=true includes resolved ones."""
     query = db.query(m.LogAlert)
     if not resolved:
-        query = query.filter_by(resolved=False)
+        query = query.filter(
+            (m.LogAlert.resolved == False) | (m.LogAlert.resolved == None)
+        )
     return query.order_by(m.LogAlert.triggered_at.desc()).all()
 
 
@@ -59,16 +69,32 @@ def run_threshold_checks(db: Session = Depends(get_db)):
     """
     Scan the shared inventory table and create alerts for any product
     that is out of stock, below safety stock, or at/below reorder point.
-    Works across ALL inventory — including finbot-imported products.
+
+    Resolves all previously open alerts first so the table always
+    reflects current inventory state — no duplicates, no stale entries.
     """
+    now = datetime.now(timezone.utc)
+
+    # Load every open alert and resolve them individually via ORM so
+    # the session cache stays consistent within this transaction.
+    open_alerts = db.query(m.LogAlert).filter(
+        (m.LogAlert.resolved == False) | (m.LogAlert.resolved == None)
+    ).all()
+    for alert in open_alerts:
+        alert.resolved = True
+        alert.resolved_at = now
+
+    # Push resolved state to DB before creating new alerts.
+    db.flush()
+
     items = db.query(m.Inventory).all()
     inventory_data = [
         {
             "sku_id": str(inv.id),
             "sku_name": inv.product_name,
-            "current_qty": inv.quantity or 0,
-            "reorder_point": inv.reorder_point or 0,
-            "safety_stock": inv.safety_stock or 0,
+            "current_qty": float(inv.quantity or 0),
+            "reorder_point": float(inv.reorder_point or 0),
+            "safety_stock": float(inv.safety_stock or 0),
         }
         for inv in items
     ]
@@ -77,10 +103,8 @@ def run_threshold_checks(db: Session = Depends(get_db)):
     created = []
 
     for a in new_alerts:
-        # Resolve log_skus.id from product_name (may be None for finbot-only products)
         sku = db.query(m.LogSKU).filter_by(name=a["sku_name"]).first()
         if not sku:
-            # Auto-create a minimal log_skus entry so the FK is satisfied
             sku = m.LogSKU(name=a["sku_name"])
             db.add(sku)
             db.flush()
@@ -95,11 +119,28 @@ def run_threshold_checks(db: Session = Depends(get_db)):
         created.append(a)
 
     db.commit()
-    return {"checked": len(inventory_data), "alerts_created": len(created), "alerts": created}
+    return {
+        "checked": len(inventory_data),
+        "stale_alerts_resolved": len(open_alerts),
+        "alerts_created": len(created),
+        "items_ok": len(inventory_data) - len(created),
+        "alerts": created,
+    }
 
 
-@router.post("/{alert_id}/resolve")
-def resolve_alert(alert_id: str, db: Session = Depends(get_db)):
+@router.post("/resolve")
+def resolve_alert_by_name(req: ResolveAlertRequest, db: Session = Depends(get_db)):
+    """Resolve the active alert for a product by name (and optional alert_type)."""
+    alert = _resolve_alert(req.product_name, req.alert_type, db)
+    alert.resolved = True
+    alert.resolved_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"status": "resolved", "product_name": req.product_name, "alert_type": alert.alert_type}
+
+
+@router.post("/{alert_id}/resolve", deprecated=True)
+def resolve_alert_by_id(alert_id: str, db: Session = Depends(get_db)):
+    """Deprecated: use POST /alerts/resolve with product_name instead."""
     alert = db.query(m.LogAlert).filter_by(id=alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
