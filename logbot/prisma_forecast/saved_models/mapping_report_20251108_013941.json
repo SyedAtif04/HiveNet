@@ -1,0 +1,38 @@
+{
+  "total_mapped": 6,
+  "required_mapped": 2,
+  "categorical_mapped": 2,
+  "numerical_mapped": 2,
+  "mapping": {
+    "date": {
+      "col": "week",
+      "method": "synonym",
+      "score": 0.95
+    },
+    "quantity_used": {
+      "col": "units_sold",
+      "method": "synonym",
+      "score": 0.95
+    },
+    "material": {
+      "col": "sku_id",
+      "method": "synonym",
+      "score": 0.95
+    },
+    "project_id": {
+      "col": "store_id",
+      "method": "synonym",
+      "score": 0.95
+    },
+    "unit_price": {
+      "col": "base_price",
+      "method": "synonym",
+      "score": 0.95
+    },
+    "total_cost": {
+      "col": "total_price",
+      "method": "synonym",
+      "score": 0.95
+    }
+  }
+}
