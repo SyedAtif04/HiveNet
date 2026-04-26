@@ -75,17 +75,21 @@ def train_command(args):
         print(f" ✓ Data loaded: {df.shape[0]} rows, {df.shape[1]} columns\n")
     except Exception as e:
         print(f" ❌ Error loading data: {str(e)}")
-        return
+        sys.exit(1)
 
-    # Step 2: LLM identifies and renames date + quantity columns
+    # Step 2: LLM identifies and renames date + quantity columns (skip if already named)
     print(f" Step 2/6: LLM column identification")
     print("-" * 70)
-    try:
-        df, mapping_info = identify_and_rename_columns(df)
-        print(f" ✓ Columns identified and renamed\n")
-    except Exception as e:
-        print(f" ❌ Error in LLM identification: {str(e)}")
-        return
+    if 'date' in df.columns and 'quantity_used' in df.columns:
+        print(f" ✓ Columns already correctly named — skipping LLM identification\n")
+        mapping_info = {}
+    else:
+        try:
+            df, mapping_info = identify_and_rename_columns(df)
+            print(f" ✓ Columns identified and renamed\n")
+        except Exception as e:
+            print(f" ❌ Error in LLM identification: {str(e)}")
+            sys.exit(1)
 
     # Step 3: Validate datatypes
     print(f" Step 3/6: Validating datatypes")
@@ -96,7 +100,7 @@ def train_command(args):
         print(f" ✓ Data validated: {df.shape[0]} rows, {df.shape[1]} columns\n")
     except Exception as e:
         print(f" ❌ Error validating data: {str(e)}")
-        return
+        sys.exit(1)
 
     # Step 4: Data summary
     print(f" Step 4/6: Data summary")
@@ -111,7 +115,7 @@ def train_command(args):
         print(f" ✓ Data preprocessed: {len(df_clean)} rows after cleaning\n")
     except Exception as e:
         print(f" ❌ Error preprocessing data: {str(e)}")
-        return
+        sys.exit(1)
 
     # Step 6: Prepare features
     print(f" Step 6/6: Preparing features")
@@ -121,7 +125,7 @@ def train_command(args):
         print(f" ✓ Features prepared: {len(feature_names)} features\n")
     except Exception as e:
         print(f" ❌ Error preparing features: {str(e)}")
-        return
+        sys.exit(1)
 
     # Step 7: Dimensionality reduction (if enabled)
     selected_features = feature_names
@@ -257,7 +261,7 @@ def train_command(args):
         print(f" ❌ Error training models: {str(e)}")
         import traceback
         traceback.print_exc()
-        return
+        sys.exit(1)
 
     print(f"\n{'='*70}")
     print(f" ✅ TRAINING COMPLETED SUCCESSFULLY!")
@@ -339,7 +343,7 @@ def predict_command(args):
         print("\nPlease train models first using: python src/cli_new.py train --data <file>")
         import traceback
         traceback.print_exc()
-        return
+        sys.exit(1)
 
     # Load recent history
     print(f" Step 2/3: Loading recent history from {args.input}")
@@ -359,7 +363,7 @@ def predict_command(args):
         print(f" ❌ Error loading recent history: {str(e)}")
         import traceback
         traceback.print_exc()
-        return
+        sys.exit(1)
 
     # Generate forecast
     print(f" Step 3/3: Generating {args.horizon}-day forecast")

@@ -61,11 +61,13 @@ async def train_model(
     duration = time.time() - start_time
 
     if result.returncode != 0:
-        error_msg = result.stderr if result.stderr else "Training failed"
+        stdout_tail = result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout
+        stderr_msg = result.stderr.strip() if result.stderr else ""
+        error_msg = f"{stderr_msg}\n\nSTDOUT (last 2000 chars):\n{stdout_tail}" if stderr_msg else f"STDOUT:\n{stdout_tail}"
         logger.error(f"Training failed with return code {result.returncode}")
-        logger.error(f"STDERR: {error_msg}")
+        logger.error(f"STDERR: {result.stderr}")
         logger.error(f"STDOUT: {result.stdout}")
-        raise RuntimeError(f"Training failed: {error_msg}")
+        raise RuntimeError(f"Training failed:\n{error_msg}")
 
     output = result.stdout
     logger.info(f"Training completed successfully in {duration:.2f}s")
@@ -120,11 +122,13 @@ async def predict(
     duration = time.time() - start_time
 
     if result.returncode != 0:
-        error_msg = result.stderr if result.stderr else "Prediction failed"
+        stdout_tail = result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout
+        stderr_msg = result.stderr.strip() if result.stderr else ""
+        error_msg = f"{stderr_msg}\n\nSTDOUT:\n{stdout_tail}" if stderr_msg else f"STDOUT:\n{stdout_tail}"
         logger.error(f"Prediction failed with return code {result.returncode}")
-        logger.error(f"STDERR: {error_msg}")
+        logger.error(f"STDERR: {result.stderr}")
         logger.error(f"STDOUT: {result.stdout}")
-        raise RuntimeError(f"Prediction failed: {error_msg}")
+        raise RuntimeError(f"Prediction failed:\n{error_msg}")
 
     output = result.stdout
     logger.info(f"Prediction completed successfully in {duration:.2f}s")

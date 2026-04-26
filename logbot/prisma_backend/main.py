@@ -19,6 +19,7 @@ try:
     from .routers import (
         upload_router, forecast_router, status_router,
         inventory_router, optimization_router, alerts_router,
+        ingest_router,
     )
 except ImportError:
     sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -27,6 +28,7 @@ except ImportError:
     from prisma_backend.routers import (
         upload_router, forecast_router, status_router,
         inventory_router, optimization_router, alerts_router,
+        ingest_router,
     )
 
 # Ensure DB tables exist on startup
@@ -90,6 +92,7 @@ app.include_router(status_router)
 app.include_router(inventory_router)
 app.include_router(optimization_router)
 app.include_router(alerts_router)
+app.include_router(ingest_router)
 
 
 # Root endpoint
@@ -106,6 +109,7 @@ async def root():
             "inventory": "/inventory",
             "optimization": "/optimization",
             "alerts": "/alerts",
+            "ingest": "/ingest",
             "status": "/status/health",
             "docs": "/docs",
         },
