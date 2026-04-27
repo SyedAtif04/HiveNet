@@ -166,3 +166,12 @@ export function buildSummary(stockItems, suppliers, alerts) {
     : 0;
   return { totalSKUs, criticalCount, lowStockCount, activeAlerts, inventoryValue, supplierCount, avgLeadTime };
 }
+
+export async function fetchChatResponse(query) {
+  const r = await fetch(`${BASE}/chat?query=${encodeURIComponent(query)}`, {
+    method: 'POST',
+  });
+  if (!r.ok) throw new Error('Failed to get response');
+  const { response } = await r.json();
+  return response;
+}

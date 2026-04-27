@@ -51,7 +51,7 @@ export default function Dashboard({ onNavigate }) {
       <div className="grid grid-cols-4 gap-4">
         <StatCard label="Total SKUs"      color="accent" value={fmtNum(summary.totalSKUs)}           sub="In inventory"       icon={<Icons.Inventory size={16} />} />
         <StatCard label="Critical Stock"  color="red"    value={summary.criticalCount}                sub="Need reorder"       icon={<Icons.Alerts size={16} />}    />
-        <StatCard label="Inventory Value" color="blue"   value={`$${(summary.inventoryValue/1000).toFixed(1)}K`} sub="All items"  icon={<Icons.Analytics size={16} />} />
+        <StatCard label="Inventory Value" color="blue"   value={`₹${(summary.inventoryValue/1000).toFixed(1)}K`} sub="All items"  icon={<Icons.Analytics size={16} />} />
         <StatCard label="Suppliers"       color="green"  value={summary.supplierCount}                sub={`Avg ${summary.avgLeadTime}d lead`} icon={<Icons.TrendUp size={16} />} />
       </div>
 

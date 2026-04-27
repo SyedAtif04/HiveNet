@@ -31,7 +31,7 @@ export default function Analytics() {
     <div className="space-y-5">
       <div className="grid grid-cols-4 gap-4">
         <StatCard label="Total SKUs"      color="accent" value={fmtNum(summary.totalSKUs)}          sub="In database"     icon={<Icons.Inventory size={16} />} />
-        <StatCard label="Inventory Value" color="blue"   value={`$${(summary.inventoryValue/1000).toFixed(1)}K`} sub="Stock × price" icon={<Icons.Analytics size={16} />} />
+        <StatCard label="Inventory Value" color="blue"   value={`₹${(summary.inventoryValue/1000).toFixed(1)}K`} sub="Stock × price" icon={<Icons.Analytics size={16} />} />
         <StatCard label="Critical Items"  color="red"    value={summary.criticalCount}               sub="Need action"     icon={<Icons.Alerts size={16} />}    />
         <StatCard label="Suppliers"       color="green"  value={summary.supplierCount}               sub={`~${summary.avgLeadTime}d avg lead`} icon={<Icons.TrendUp size={16} />} />
       </div>
@@ -55,7 +55,7 @@ export default function Analytics() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-fb-text truncate">{cat.name}</span>
-                        <span className="text-xs font-bold font-mono text-fb-accent ml-2">${cat.amount.toLocaleString()}</span>
+                        <span className="text-xs font-bold font-mono text-fb-accent ml-2">₹{cat.amount.toLocaleString()}</span>
                       </div>
                       <div className="w-full bg-fb-card2 rounded-full h-1.5">
                         <div className="h-full rounded-full transition-all" style={{ width: `${cat.pct}%`, backgroundColor: cat.color }}></div>
@@ -88,7 +88,7 @@ export default function Analytics() {
                     <td className="px-4 py-3 text-xs font-medium text-fb-text">{s.name}</td>
                     <td className="px-4 py-3 text-xs font-mono text-fb-muted">{s.lead_time_days}d</td>
                     <td className="px-4 py-3 text-xs font-mono text-fb-muted">{s.min_order_qty} units</td>
-                    <td className="px-4 py-3 text-xs font-bold font-mono text-fb-accent">${s.unit_cost?.toLocaleString() ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs font-bold font-mono text-fb-accent">₹{s.unit_cost?.toLocaleString() ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-16 bg-fb-card2 rounded-full h-1.5">
