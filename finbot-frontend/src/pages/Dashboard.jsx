@@ -80,7 +80,7 @@ export default function Dashboard({ onNavigate }) {
       <Card className="p-5">
         <CardHeader title="Profit Trend" subtitle="Net profit across 6 months"
           action={<span className="text-xs font-mono text-fb-accent font-bold">{fmt(MOCK_SUMMARY.profit)} total</span>} />
-        <SparkLine data={MOCK_MONTHLY} height={80} />
+        <SparkLine data={MOCK_MONTHLY} height={280} />
       </Card>
     </div>
   );

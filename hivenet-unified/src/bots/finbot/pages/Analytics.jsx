@@ -6,6 +6,36 @@ import { DonutChart, LineChart } from '@/charts.jsx';
 
 const PRESETS = ['1M', '3M', '6M', 'YTD', 'All'];
 
+const getDateRange = (preset) => {
+  const today = new Date();
+  const year = today.getFullYear();
+  let start, end;
+
+  end = today.toISOString().split('T')[0];
+
+  switch(preset) {
+    case '1M':
+      start = new Date(today.setMonth(today.getMonth() - 1)).toISOString().split('T')[0];
+      break;
+    case '3M':
+      start = new Date(today.setMonth(today.getMonth() - 3)).toISOString().split('T')[0];
+      break;
+    case '6M':
+      start = new Date(today.setMonth(today.getMonth() - 6)).toISOString().split('T')[0];
+      break;
+    case 'YTD':
+      start = `${year}-01-01`;
+      break;
+    case 'All':
+      start = null;
+      end = null;
+      break;
+    default:
+      start = new Date(today.setMonth(today.getMonth() - 6)).toISOString().split('T')[0];
+  }
+  return { start, end };
+};
+
 export default function Analytics() {
   const [preset,     setPreset]     = useState('6M');
   const [start,      setStart]      = useState('2026-01-01');
@@ -16,12 +46,27 @@ export default function Analytics() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
-  useEffect(() => {
+  const loadData = (startDate, endDate) => {
     setLoading(true);
-    Promise.all([fetchSummary(), fetchMonthly(), fetchCategories()])
+    Promise.all([fetchSummary(startDate, endDate), fetchMonthly(startDate, endDate), fetchCategories(startDate, endDate)])
       .then(([s, m, c]) => { setSummary(s); setMonthly(m); setCategories(c); setError(null); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
+  };
+
+  const handlePresetClick = (p) => {
+    setPreset(p);
+    const { start: s, end: e } = getDateRange(p);
+    if (s) setStart(s);
+    if (e) setEnd(e);
+  };
+
+  const handleApply = () => {
+    loadData(start, end);
+  };
+
+  useEffect(() => {
+    loadData(start, end);
   }, []);
 
   const total = categories.reduce((s, c) => s + c.amount, 0) || 1;
@@ -41,13 +86,13 @@ export default function Analytics() {
           </div>
           <div className="flex gap-1">
             {PRESETS.map(p => (
-              <button key={p} onClick={() => setPreset(p)}
+              <button key={p} onClick={() => handlePresetClick(p)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${preset === p ? 'bg-fb-accent text-fb-sidebar font-semibold' : 'bg-fb-card2 border border-fb-border text-fb-muted hover:border-fb-accent/50'}`}>
                 {p}
               </button>
             ))}
           </div>
-          <button className="px-4 py-1.5 rounded-lg btn-primary text-xs">Apply</button>
+          <button onClick={handleApply} className="px-4 py-1.5 rounded-lg btn-primary text-xs">Apply</button>
         </div>
       </Card>
 

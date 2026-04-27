@@ -1,22 +1,25 @@
 import { useState, useEffect } from 'react';
-import { fetchTransactions, postTransaction } from '../api.js';
+import { fetchTransactions, fetchTransactionItems, postTransaction } from '../api.js';
 import { Card, StatCard, Badge, Modal, Field, Input, Select, fmt } from '@/components.jsx';
 import { Icons } from '@/icons.jsx';
 
 const CATEGORIES = ['Sales', 'Salaries', 'Marketing', 'Operations', 'Software', 'Services', 'Other'];
 
 export default function Transactions() {
-  const [rows,       setRows]       = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState(null);
-  const [saving,     setSaving]     = useState(false);
-  const [sortKey,    setSortKey]    = useState('date');
-  const [sortDir,    setSortDir]    = useState('desc');
-  const [filterType, setFilter]     = useState('All');
-  const [search,     setSearch]     = useState('');
-  const [modal,      setModal]      = useState(false);
-  const [form,       setForm]       = useState({ type: 'Income', amount: '', category: 'Sales', description: '', date: '' });
-  const [formError,  setFormError]  = useState('');
+  const [rows,        setRows]        = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState(null);
+  const [saving,      setSaving]      = useState(false);
+  const [sortKey,     setSortKey]     = useState('date');
+  const [sortDir,     setSortDir]     = useState('desc');
+  const [filterType,  setFilter]      = useState('All');
+  const [search,      setSearch]      = useState('');
+  const [modal,       setModal]       = useState(false);
+  const [form,        setForm]        = useState({ type: 'Income', amount: '', category: 'Sales', description: '', date: '' });
+  const [formError,   setFormError]   = useState('');
+  const [itemsModal,  setItemsModal]  = useState(false);
+  const [items,       setItems]       = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
 
   const loadTransactions = () => {
     setLoading(true);
@@ -53,6 +56,20 @@ export default function Transactions() {
       </div>
     </th>
   );
+
+  const handleViewItems = async (transactionId) => {
+    setItemsLoading(true);
+    try {
+      const fetchedItems = await fetchTransactionItems(transactionId);
+      setItems(fetchedItems);
+      setItemsModal(true);
+    } catch (e) {
+      setItems([]);
+      setItemsModal(true);
+    } finally {
+      setItemsLoading(false);
+    }
+  };
 
   const handleAdd = async () => {
     if (!form.amount || !form.date) { setFormError('Amount and date are required.'); return; }
@@ -117,7 +134,12 @@ export default function Transactions() {
                     <td className="px-4 py-3"><Badge label={row.type} color={row.type} /></td>
                     <td className={`px-4 py-3 text-sm font-bold font-mono ${row.amount > 0 ? 'text-fb-green' : 'text-fb-red'}`}>{row.amount > 0 ? '+' : ''}{fmt(row.amount)}</td>
                     <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded bg-fb-card2 border border-fb-border text-fb-muted">{row.category}</span></td>
-                    <td className="px-4 py-3 text-xs text-fb-muted max-w-xs truncate">{row.description}</td>
+                    <td className="px-4 py-3 flex items-center gap-2 justify-between">
+                      <span className="text-xs text-fb-muted max-w-xs truncate">{row.description}</span>
+                      <button onClick={() => handleViewItems(row.id)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-fb-card2 border border-fb-border text-fb-muted hover:border-fb-accent/50 hover:text-fb-accent transition-colors whitespace-nowrap">
+                        <Icons.ChevronDown size={10} /> Items
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && <tr><td colSpan={5} className="px-4 py-12 text-center text-fb-muted text-sm">No transactions match the filter.</td></tr>}
@@ -156,6 +178,36 @@ export default function Transactions() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      <Modal open={itemsModal} onClose={() => setItemsModal(false)} title="Transaction Items">
+        {itemsLoading ? (
+          <div className="py-8 text-center text-fb-muted text-sm">Loading items…</div>
+        ) : items.length === 0 ? (
+          <div className="py-8 text-center text-fb-muted text-sm">No items in this transaction</div>
+        ) : (
+          <div className="space-y-3">
+            {items.map(item => (
+              <div key={item.id} className="flex items-center justify-between p-3 bg-fb-card2 border border-fb-border rounded-lg">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-fb-text">{item.productName}</div>
+                  <div className="text-[10px] text-fb-muted mt-1">Qty: {item.quantity} × ${item.price.toFixed(2)}</div>
+                </div>
+                <div className="text-sm font-bold text-fb-accent">${item.total.toFixed(2)}</div>
+              </div>
+            ))}
+            <div className="border-t border-fb-border pt-3 mt-4">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-fb-muted">Total Items:</span>
+                <span className="font-semibold text-fb-text">{items.length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-bold mt-2">
+                <span className="text-fb-muted">Total Value:</span>
+                <span className="text-fb-accent">${items.reduce((s, i) => s + i.total, 0).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

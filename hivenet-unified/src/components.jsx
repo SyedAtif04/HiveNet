@@ -161,7 +161,7 @@ export const PredCard = ({ period, data }) => (
         <div key={r.label} className="flex items-center justify-between">
           <div>
             <div className="text-[10px] text-fb-muted">{r.label}</div>
-            <div className={`text-sm font-bold font-mono ${r.color}`}>${r.val.toLocaleString()}</div>
+            <div className={`text-sm font-bold font-mono ${r.color}`}>₹{r.val.toLocaleString()}</div>
           </div>
           <div className={`flex items-center gap-1 text-xs font-medium ${r.up ? 'text-fb-green' : 'text-fb-red'}`}>
             {r.up ? <Icons.ArrowUp size={12} /> : <Icons.ArrowDown size={12} />}
@@ -205,5 +205,5 @@ export const ForecastCard = ({ period, data }) => (
   </Card>
 );
 
-export const fmt    = (n) => '$' + Math.abs(n).toLocaleString();
+export const fmt    = (n) => '₹' + Math.abs(n).toLocaleString();
 export const fmtNum = (n) => Number(n).toLocaleString();

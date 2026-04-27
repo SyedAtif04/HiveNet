@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchForecastResults } from '../api.js';
 import { Card, CardHeader, ForecastCard } from '@/components.jsx';
 import { Icons } from '@/icons.jsx';
-import { UnitBarChart } from '@/charts.jsx';
+import { UnitBarChart, ForecastTrendChart } from '@/charts.jsx';
 
 function parseSummary(result) {
   if (!result?.data) return null;
@@ -120,20 +120,37 @@ export default function Forecasts({ onNavigate }) {
       </div>
 
       {monthly.length > 0 && (
-        <Card className="p-5">
-          <CardHeader title="Demand Forecast" subtitle="Predicted units by month with confidence intervals"
-            action={
-              <div className="flex gap-1">
-                {DURATIONS.map(({ key, label }) => results[key] && (
-                  <button key={key} onClick={() => setSelected(key)}
-                    className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${selected === key ? 'bg-fb-accent text-fb-sidebar' : 'bg-fb-card2 border border-fb-border text-fb-muted hover:border-fb-accent/50'}`}>
-                    {label.split('-')[0].trim()}
-                  </button>
-                ))}
-              </div>
-            }
-          />
-          <UnitBarChart data={monthly} height={160} />
+        <>
+          <Card className="p-5">
+            <CardHeader title="Forecast Trend" subtitle="Predicted demand trend with confidence intervals"
+              action={
+                <div className="flex gap-1">
+                  {DURATIONS.map(({ key, label }) => results[key] && (
+                    <button key={key} onClick={() => setSelected(key)}
+                      className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${selected === key ? 'bg-fb-accent text-fb-sidebar' : 'bg-fb-card2 border border-fb-border text-fb-muted hover:border-fb-accent/50'}`}>
+                      {label.split('-')[0].trim()}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
+            <ForecastTrendChart data={monthly} height={220} />
+          </Card>
+
+          <Card className="p-5">
+            <CardHeader title="Demand Forecast" subtitle="Predicted units by month with confidence intervals"
+              action={
+                <div className="flex gap-1">
+                  {DURATIONS.map(({ key, label }) => results[key] && (
+                    <button key={key} onClick={() => setSelected(key)}
+                      className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${selected === key ? 'bg-fb-accent text-fb-sidebar' : 'bg-fb-card2 border border-fb-border text-fb-muted hover:border-fb-accent/50'}`}>
+                      {label.split('-')[0].trim()}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
+            <UnitBarChart data={monthly} height={160} />
           <div className="mt-3 grid grid-cols-3 gap-4 text-center">
             {[
               ['Total Demand',  `${(parseSummary(results[selected])?.totalDemand || 0).toLocaleString()} units`, 'text-fb-accent'],
@@ -146,7 +163,8 @@ export default function Forecasts({ onNavigate }) {
               </div>
             ))}
           </div>
-        </Card>
+          </Card>
+        </>
       )}
 
       {summaries.some(s => s.summary) && (

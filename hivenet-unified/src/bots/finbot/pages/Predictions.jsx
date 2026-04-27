@@ -47,10 +47,10 @@ export default function Predictions() {
 
       {monthly.length > 0 && (
         <Card className="p-5">
-          <CardHeader title="Profit Forecast Trend" subtitle="Historical net profit"
+          <CardHeader title="Profit Forecast Trend" subtitle="Historical net profit with forecast insights"
             action={<div className="flex items-center gap-3 text-xs text-fb-muted"><span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-fb-accent inline-block rounded"></span>Historical</span></div>}
           />
-          <SparkLine data={monthly} height={100} getValue={d => d.income - d.expense} />
+          <SparkLine data={monthly} height={280} getValue={d => d.income - d.expense} />
         </Card>
       )}
 
