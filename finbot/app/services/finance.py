@@ -189,7 +189,12 @@ def category_summary(transactions):
     }
 
 def parse_date(date_str):
-    return datetime.strptime(date_str, "%d-%m-%Y")
+    for fmt in ["%Y-%m-%d", "%d-%m-%Y"]:
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Date format not recognized: {date_str}")
 
 def format_finance_knowledge(summary, monthly, prediction, insights):
     monthly_text = "\n".join([

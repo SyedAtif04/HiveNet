@@ -86,3 +86,10 @@ def get_transactions(db: Session = Depends(get_db)):
         .all()
     return transactions
 
+@router.get("/transactions/{transaction_id}/items")
+def get_transaction_items(transaction_id: str, db: Session = Depends(get_db)):
+    items = db.query(TransactionItem)\
+        .filter(TransactionItem.transaction_id == transaction_id)\
+        .all()
+    return items
+

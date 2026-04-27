@@ -15,22 +15,40 @@ function fmtTxDate(isoStr) {
   return `${dd}-${mm}-${d.getFullYear()}`;
 }
 
-export async function fetchSummary() {
-  const r = await fetch(`${BASE}/summary`);
+export async function fetchSummary(startDate, endDate) {
+  let url = `${BASE}/summary`;
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  if (params.toString()) url += `?${params.toString()}`;
+
+  const r = await fetch(url);
   if (!r.ok) throw new Error('Failed to load summary');
   const d = await r.json();
   return { income: d.total_income, expense: d.total_expense, profit: d.profit };
 }
 
-export async function fetchMonthly() {
-  const r = await fetch(`${BASE}/summary/monthly`);
+export async function fetchMonthly(startDate, endDate) {
+  let url = `${BASE}/summary/monthly`;
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  if (params.toString()) url += `?${params.toString()}`;
+
+  const r = await fetch(url);
   if (!r.ok) throw new Error('Failed to load monthly data');
   const { monthly } = await r.json();
   return monthly.map(m => ({ month: fmtMonth(m.month), income: m.income, expense: m.expense }));
 }
 
-export async function fetchCategories() {
-  const r = await fetch(`${BASE}/summary/category`);
+export async function fetchCategories(startDate, endDate) {
+  let url = `${BASE}/summary/category`;
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  if (params.toString()) url += `?${params.toString()}`;
+
+  const r = await fetch(url);
   if (!r.ok) throw new Error('Failed to load categories');
   const { expenses_by_category } = await r.json();
   const total = expenses_by_category.reduce((s, c) => s + c.amount, 0) || 1;
@@ -77,6 +95,19 @@ export async function fetchTransactions() {
       description: t.description || '',
     };
   });
+}
+
+export async function fetchTransactionItems(transactionId) {
+  const r = await fetch(`${BASE}/transactions/${transactionId}/items`);
+  if (!r.ok) throw new Error('Failed to load items');
+  const items = await r.json();
+  return items.map(item => ({
+    id:            item.id,
+    productName:   item.product_name,
+    quantity:      item.quantity,
+    price:         item.price,
+    total:         item.quantity * item.price,
+  }));
 }
 
 export async function postTransaction(form) {

@@ -199,7 +199,7 @@ export const DonutChart = ({ data, height = 180 }) => {
   return <div style={{ height }}><canvas ref={canvasRef} /></div>;
 };
 
-export const SparkLine = ({ data, color = '#f5c518', height = 60 }) => {
+export const SparkLine = ({ data, color = '#f5c518', height = 280 }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -213,11 +213,16 @@ export const SparkLine = ({ data, color = '#f5c518', height = 60 }) => {
       data: {
         labels: data.map(d => d.month),
         datasets: [{
+          label: 'Net Profit',
           data: data.map(d => d.income - d.expense),
           borderColor: color,
           backgroundColor: grad,
-          borderWidth: 2,
-          pointRadius: 0,
+          borderWidth: 3,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          pointBackgroundColor: color,
+          pointBorderColor: '#0d0d18',
+          pointBorderWidth: 2,
           tension: 0.4,
           fill: true,
         }],
@@ -225,12 +230,90 @@ export const SparkLine = ({ data, color = '#f5c518', height = 60 }) => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: { x: { display: false }, y: { display: false } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'end',
+            labels: { boxWidth: 12, boxHeight: 12, borderRadius: 4, useBorderRadius: true, padding: 16, color: '#6b6b88', font: { size: 12, weight: 'bold' } },
+          },
+          tooltip: {
+            backgroundColor: '#13131f',
+            borderColor: '#252538',
+            borderWidth: 1.5,
+            padding: 14,
+            titleColor: '#e2e2f0',
+            bodyColor: '#6b6b88',
+            titleFont: { size: 13, weight: 'bold' },
+            bodyFont: { size: 12 },
+            callbacks: {
+              title: ctx => `${ctx[0].label}`,
+              label: ctx => {
+                const idx = ctx.dataIndex;
+                if (idx !== undefined && idx < data.length) {
+                  const item = data[idx];
+                  return [
+                    ` Income:  $${item.income.toLocaleString()}`,
+                    ` Expense: $${item.expense.toLocaleString()}`,
+                    ` Profit:  $${(item.income - item.expense).toLocaleString()}`,
+                  ];
+                }
+                return ` Profit: $${ctx.parsed.y.toLocaleString()}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: '#1a1a2e', drawBorder: true },
+            ticks: { color: '#6b6b88', font: { size: 11 } },
+            title: { display: true, text: 'Month', color: '#6b6b88', font: { size: 11, weight: '500' } }
+          },
+          y: {
+            grid: { color: '#1a1a2e', drawBorder: true },
+            ticks: {
+              color: '#6b6b88',
+              font: { size: 11 },
+              callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : v >= 1000 ? (v/1000).toFixed(0) + 'k' : v)
+            },
+            title: { display: true, text: 'Profit ($)', color: '#6b6b88', font: { size: 11, weight: '500' } }
+          },
+        },
       },
     });
     return () => { chart.destroy(); };
   }, [data, color, height]);
 
-  return <div style={{ height }}><canvas ref={canvasRef} /></div>;
+  // Calculate statistics
+  const profits = data.map(d => d.income - d.expense);
+  const stats = {
+    total: profits.reduce((a, b) => a + b),
+    avg: (profits.reduce((a, b) => a + b) / profits.length),
+    max: Math.max(...profits),
+    min: Math.min(...profits),
+  };
+
+  return (
+    <div>
+      <div style={{ height }}><canvas ref={canvasRef} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginTop: '18px' }}>
+        <div style={{ background: '#1a1a2e', border: '1px solid #252538', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#6b6b88', marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Total Profit</div>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#f5c518' }}>${(stats.total / 1000).toFixed(0)}k</div>
+        </div>
+        <div style={{ background: '#1a1a2e', border: '1px solid #252538', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#6b6b88', marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Average</div>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#3ecf8e' }}>${(stats.avg / 1000).toFixed(0)}k</div>
+        </div>
+        <div style={{ background: '#1a1a2e', border: '1px solid #252538', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#6b6b88', marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Peak</div>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#4c9eff' }}>${(stats.max / 1000).toFixed(0)}k</div>
+        </div>
+        <div style={{ background: '#1a1a2e', border: '1px solid #252538', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#6b6b88', marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' }}>Low</div>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#e05555' }}>${(stats.min / 1000).toFixed(0)}k</div>
+        </div>
+      </div>
+    </div>
+  );
 };

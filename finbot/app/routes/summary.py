@@ -15,6 +15,9 @@ from app.models import KnowledgeBase
 from app.services.finance import format_finance_knowledge
 from app.services.finance import get_embedding
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
