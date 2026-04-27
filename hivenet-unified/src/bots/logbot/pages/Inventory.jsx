@@ -132,7 +132,7 @@ export default function Inventory() {
                     <td className="px-4 py-3 text-xs font-mono text-fb-muted">{item.rp || '—'}</td>
                     <td className="px-4 py-3 text-xs font-mono text-fb-muted">{item.ss || '—'}</td>
                     <td className="px-4 py-3 text-xs font-mono text-fb-blue">{item.eoq || '—'}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-fb-muted">{item.price ? `$${item.price.toLocaleString()}` : '—'}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-fb-muted">{item.price ? `₹${item.price.toLocaleString()}` : '—'}</td>
                     <td className="px-4 py-3"><StockBadge status={item.status} /></td>
                     <td className="px-4 py-3 text-xs font-mono text-fb-muted">{item.location}</td>
                   </tr>

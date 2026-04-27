@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { MOCK_CHAT, MOCK_KNOWLEDGE } from '../data.js';
 import { Card } from '@/components.jsx';
 import { Icons } from '@/icons.jsx';
+import { fetchChatResponse, fetchKnowledgeSearch } from '../api.js';
 
 const SUGGESTIONS = [
   'What was my biggest expense last quarter?',
@@ -24,30 +24,43 @@ const renderText = (text) => {
 };
 
 export default function AIAssistant() {
-  const [messages, setMessages] = useState(MOCK_CHAT);
+  const [messages, setMessages] = useState([]);
   const [input, setInput]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [kbSearch, setKbSearch] = useState('');
+  const [knowledge, setKnowledge] = useState([]);
   const bottomRef               = useRef(null);
-  const responseIdx             = useRef(0);
 
   useEffect(() => { if (bottomRef.current) bottomRef.current.scrollTop = bottomRef.current.scrollHeight; }, [messages]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text }]);
     setLoading(true);
-    setTimeout(() => {
-      const reply = MOCK_RESPONSES[responseIdx.current % MOCK_RESPONSES.length];
-      responseIdx.current++;
+
+    try {
+      const reply = await fetchChatResponse(text);
       setMessages(prev => [...prev, { role: 'bot', text: reply }]);
+
+      // Also fetch knowledge sources for this query
+      const sources = await fetchKnowledgeSearch(text);
+      setKnowledge(sources.map((s, i) => ({
+        id: i,
+        title: s.content.substring(0, 100) + '...',
+        preview: s.content.substring(0, 150),
+        score: (s.similarity * 100).toFixed(0),
+        tags: ['financial-data'],
+      })));
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'bot', text: `Error: ${e.message}` }]);
+    } finally {
       setLoading(false);
-    }, 900 + Math.random() * 600);
+    }
   };
 
-  const filteredKB = MOCK_KNOWLEDGE.filter(k => !kbSearch || k.title.toLowerCase().includes(kbSearch.toLowerCase()) || k.tags.some(t => t.includes(kbSearch.toLowerCase())));
+  const filteredKB = knowledge.filter(k => !kbSearch || k.title.toLowerCase().includes(kbSearch.toLowerCase()) || k.tags.some(t => t.includes(kbSearch.toLowerCase())));
 
   return (
     <div className="flex gap-5" style={{ height: 'calc(100vh - 8rem)' }}>

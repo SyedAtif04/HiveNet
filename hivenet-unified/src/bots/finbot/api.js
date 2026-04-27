@@ -130,3 +130,18 @@ export async function postTransaction(form) {
   }
   return r.json();
 }
+
+export async function fetchChatResponse(query) {
+  const r = await fetch(`${BASE}/chat?query=${encodeURIComponent(query)}`, {
+    method: 'POST',
+  });
+  if (!r.ok) throw new Error('Failed to get response');
+  const { response } = await r.json();
+  return response;
+}
+
+export async function fetchKnowledgeSearch(query) {
+  const r = await fetch(`${BASE}/knowledge/search?query=${encodeURIComponent(query)}`);
+  if (!r.ok) throw new Error('Failed to search knowledge base');
+  return r.json();
+}
