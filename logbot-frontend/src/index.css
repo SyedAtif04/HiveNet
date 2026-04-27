@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-fb-bg:          #0d0d18;
+  --color-fb-card:        #13131f;
+  --color-fb-card2:       #1a1a2e;
+  --color-fb-border:      #252538;
+  --color-fb-sidebar:     #0a0a14;
+  --color-fb-accent:      #f5c518;
+  --color-fb-accent-dim:  #f5c51822;
+  --color-fb-green:       #3ecf8e;
+  --color-fb-green-dim:   #3ecf8e18;
+  --color-fb-red:         #e05555;
+  --color-fb-red-dim:     #e0555518;
+  --color-fb-blue:        #4c9eff;
+  --color-fb-blue-dim:    #4c9eff18;
+  --color-fb-purple:      #9966ff;
+  --color-fb-text:        #e2e2f0;
+  --color-fb-muted:       #6b6b88;
+  --color-fb-dim:         #3a3a55;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+body { background: #0d0d18; font-family: 'Inter', sans-serif; color: #e2e2f0; margin: 0; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #13131f; }
+::-webkit-scrollbar-thumb { background: #252538; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a55; }
+
+.card-glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.sidebar-active { background: #f5c518; color: #0d0d18; }
+.sidebar-item { transition: background 0.15s, color 0.15s; }
+.sidebar-item:hover { background: rgba(245,197,24,0.1); color: #f5c518; }
+
+.btn-primary { background: #f5c518; color: #0d0d18; font-weight: 600; transition: opacity 0.15s, transform 0.1s; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid #252538; color: #6b6b88; transition: border-color 0.15s, color 0.15s; }
+.btn-ghost:hover { border-color: #f5c518; color: #f5c518; }
+
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+input, select, textarea { outline: none; }
+input::placeholder { color: #3a3a55; }
+.drag-over { border-color: #f5c518 !important; background: rgba(245,197,24,0.05) !important; }
+.chat-bubble-bot { background: #1a1a2e; border: 1px solid #252538; }
+.chat-bubble-user { background: rgba(245,197,24,0.1); border: 1px solid rgba(245,197,24,0.2); }
