@@ -35,6 +35,13 @@ class Inventory(Base):
     quantity = Column(Integer, default=0)
     unit_price = Column(Float, nullable=True)
 
+    # logbot optimization fields — written by logbot, readable by finbot
+    reorder_point = Column(Float, nullable=True)
+    safety_stock = Column(Float, nullable=True)
+    eoq = Column(Float, nullable=True)
+    warehouse_location = Column(String, nullable=True)
+    last_updated = Column(DateTime, nullable=True)
+
 class TransactionItem(Base):
     __tablename__ = "transaction_items"
 

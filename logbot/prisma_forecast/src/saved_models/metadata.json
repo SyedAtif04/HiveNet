@@ -1,0 +1,7 @@
+{
+  "n_features": 30,
+  "model_type": "LightGBM + Prophet Ensemble",
+  "saved_at": "C:\\Users\\unkno\\Desktop\\hackrev2\\prisma_forecast\\src",
+  "has_feature_schema": false,
+  "has_pca_model": false
+}

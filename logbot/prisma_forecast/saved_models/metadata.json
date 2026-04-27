@@ -1,0 +1,40 @@
+{
+  "type": "per_group",
+  "group_cols": [
+    "material"
+  ],
+  "num_groups": 54,
+  "feature_names": [
+    "material",
+    "unit_price",
+    "quantity_used_diff",
+    "lead_time_days",
+    "quantity_lag_1",
+    "unit_price_diff",
+    "quantity_rolling_mean_7",
+    "day_of_month",
+    "quantity_rolling_mean_14",
+    "week_of_year",
+    "quantity_rolling_mean_30",
+    "late_delivery_risk",
+    "price_lag_7",
+    "is_weekend",
+    "week_cos",
+    "month",
+    "region",
+    "week_sin",
+    "quantity_lag_3",
+    "day_of_week",
+    "quantity_lag_5",
+    "quantity_lag_14",
+    "month_cos",
+    "month_sin",
+    "quantity_lag_7",
+    "quantity_lag_30",
+    "day_of_week_sin",
+    "day_of_week_cos",
+    "shipping_mode",
+    "quarter"
+  ],
+  "timestamp": "2026-04-26T22:46:50.226624"
+}

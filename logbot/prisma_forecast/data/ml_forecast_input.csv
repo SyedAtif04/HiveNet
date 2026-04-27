@@ -1,0 +1,123 @@
+date,quantity_used,material,unit_price,lead_time_days,late_delivery_risk,region,shipping_mode
+2017-11-03,65,Industrial consumer electronics,252.8800049,3.7,1,Southern Europe,Second Class
+2017-11-04,30,Industrial consumer electronics,252.8800049,3.6,1,Western Europe,Second Class
+2017-11-04,34,Porcelain crafts,461.480011,3.4,1,Western Europe,Standard Class
+2017-11-05,58,Porcelain crafts,461.480011,3.7,1,Northern Europe,Second Class
+2017-11-06,62,Porcelain crafts,461.480011,3.5,1,Western Europe,Second Class
+2017-11-07,12,DVDs ,164.3800049,3.4,1,Northern Europe,Standard Class
+2017-11-07,50,Porcelain crafts,461.480011,3.7,1,Southern Europe,Second Class
+2017-11-08,57,DVDs ,164.38000490000002,3.4,1,Northern Europe,Second Class
+2017-11-09,67,DVDs ,164.3800049,3.7,1,Western Europe,Second Class
+2017-11-10,63,DVDs ,164.3800049,3.8,1,Western Europe,Second Class
+2017-11-11,61,DVDs ,164.3800049,3.6,1,Southeast Asia,Standard Class
+2017-11-12,61,DVDs ,164.3800049,3.5,1,Oceania,Standard Class
+2017-11-13,12,DVDs ,164.3800049,4.0,1,Eastern Asia,Standard Class
+2017-11-13,53,Lawn mower,532.5800171,3.1,1,South Asia,Same Day
+2017-11-14,59,Lawn mower,532.5800171,3.7,1,Southeast Asia,Standard Class
+2017-11-15,64,Lawn mower,532.5800171,3.1,1,Eastern Asia,Standard Class
+2017-11-16,64,Lawn mower,532.5800171,3.5,1,Oceania,Standard Class
+2017-11-17,64,Lawn mower,532.5800171,3.6,1,Eastern Asia,Standard Class
+2017-11-18,9,First aid kit,293.0400085,3.9,1,Southeast Asia,First Class
+2017-11-18,54,Lawn mower,532.5800171,3.5,1,Eastern Asia,Standard Class
+2017-11-19,64,First aid kit,293.0400085,3.6,1,Eastern Asia,Standard Class
+2017-11-20,63,First aid kit,293.0400085,3.5,1,South Asia,Standard Class
+2017-11-21,66,First aid kit,293.0400085,3.7,1,South Asia,First Class
+2017-11-22,20,First aid kit,293.0400085,3.5,1,Eastern Asia,Standard Class
+2017-11-22,43,Men's gala suit,210.85000609999997,3.4,1,South Asia,Standard Class
+2017-11-23,60,Men's gala suit,210.8500061,3.5,1,Oceania,Standard Class
+2017-11-24,56,Men's gala suit,210.8500061,3.9,1,Eastern Asia,Standard Class
+2017-11-24,6,Rock music,260.6499939,3.7,1,Eastern Asia,Standard Class
+2017-11-25,64,Rock music,260.6499939,3.6,1,Oceania,Standard Class
+2017-11-26,62,Rock music,260.6499939,3.3,1,Oceania,First Class
+2017-11-27,64,Rock music,260.6499939,3.6,1,South Asia,Standard Class
+2017-11-28,63,Rock music,260.6499939,3.7,1,Southeast Asia,Standard Class
+2017-11-29,49,Adult dog supplies,84.40000153,3.8,1,Eastern Asia,Standard Class
+2017-11-29,9,Rock music,260.6499939,2.6,1,Oceania,Standard Class
+2017-11-30,61,Adult dog supplies,84.40000153,3.1,1,Eastern Asia,Standard Class
+2017-12-01,69,Adult dog supplies,84.40000153,3.2,1,South Asia,Second Class
+2017-12-02,46,Adult dog supplies,84.40000153,3.5,1,South Asia,Second Class
+2017-12-02,16,Smart watch ,327.75,3.8,1,Southeast Asia,Standard Class
+2017-12-03,58,Smart watch ,327.75,3.3,1,Oceania,First Class
+2017-12-04,53,Smart watch ,327.75,3.6,1,South Asia,Standard Class
+2017-12-04,10,Toys ,11.53999996,3.5,1,Oceania,First Class
+2017-12-05,62,Toys ,11.53999996,3.3,1,Oceania,Standard Class
+2017-12-06,64,Toys ,11.53999996,3.4,1,South Asia,Standard Class
+2017-12-07,63,Toys ,11.53999996,3.3,1,Southeast Asia,Standard Class
+2017-12-08,26,Fighting video games,39.75,3.2,1,South Asia,Standard Class
+2017-12-08,29,Toys ,11.53999996,3.7,1,Eastern Asia,Standard Class
+2017-12-09,63,Fighting video games,39.75,3.8,1,South Asia,Standard Class
+2017-12-10,56,Fighting video games,39.75,3.7,1,Southeast Asia,Standard Class
+2017-12-11,57,Fighting video games,39.75,3.8,1,Southeast Asia,Standard Class
+2017-12-11,9,Summer dresses,215.8200073,3.3,1,Southeast Asia,First Class
+2017-12-12,60,Summer dresses,215.8200073,3.2,1,South Asia,Second Class
+2017-12-13,65,Summer dresses,215.8200073,3.7,1,South Asia,Standard Class
+2017-12-14,62,Summer dresses,215.8200073,3.4,1,Eastern Asia,Standard Class
+2017-12-15,11,Sports Books ,31.07999992,2.8,1,South Asia,Same Day
+2017-12-15,52,Summer dresses,215.8200073,3.4,1,Southeast Asia,Second Class
+2017-12-16,61,Sports Books ,31.07999992,3.3,1,Southeast Asia,Same Day
+2017-12-17,41,Baby sweater,59.08000182999999,3.0,1,South Asia,Same Day
+2017-12-17,12,Sports Books ,31.079999919999995,4.2,1,South Asia,Standard Class
+2017-12-18,59,Baby sweater,59.08000183,3.2,1,Eastern Asia,Standard Class
+2017-12-19,6,Baby sweater,59.08000182999999,3.7,1,South Asia,Standard Class
+2017-12-19,54,CDs of rock,11.28999996,3.9,1,Southeast Asia,Standard Class
+2017-12-20,65,CDs of rock,11.28999996,3.1,1,Oceania,First Class
+2017-12-21,5,CDs of rock,11.28999996,2.4,1,South Asia,First Class
+2017-12-21,41,Children's heaters,357.1000061,3.4,1,Southeast Asia,Standard Class
+2017-12-21,17,Web Camera,452.0400085,3.2,1,South Asia,First Class
+2017-12-22,58,Children's heaters,357.1000061,3.7,1,South Asia,Standard Class
+2017-12-23,16,Children's heaters,357.1000061,4.1,1,Southeast Asia,Standard Class
+2017-12-23,46,Dell Laptop,1500.0,3.7,1,Southeast Asia,Standard Class
+2017-12-24,38,Dell Laptop,1500.0,3.7,1,South Asia,Second Class
+2017-12-24,26,Industrial consumer electronics,252.8800049,3.3,1,Oceania,First Class
+2017-12-25,64,Industrial consumer electronics,252.8800049,3.7,1,Southeast Asia,First Class
+2017-12-26,44,Industrial consumer electronics,252.88000490000002,3.3,1,Eastern Asia,Standard Class
+2017-12-26,17,Porcelain crafts,461.480011,3.4,1,Southeast Asia,Standard Class
+2017-12-27,62,Porcelain crafts,461.480011,3.8,1,Eastern Asia,Standard Class
+2017-12-28,60,Porcelain crafts,461.480011,3.8,1,Southeast Asia,Standard Class
+2017-12-29,65,Porcelain crafts,461.480011,3.4,1,Southeast Asia,Second Class
+2017-12-30,37,DVDs ,164.3800049,3.7,1,South Asia,Standard Class
+2017-12-30,25,Porcelain crafts,461.480011,3.4,1,Oceania,Standard Class
+2017-12-31,62,DVDs ,164.3800049,3.8,1,Oceania,Standard Class
+2018-01-01,4,DVDs ,164.3800049,2.0,1,Southeast Asia,First Class
+2018-01-01,56,Lawn mower,532.5800171,3.6,1,Eastern Asia,Standard Class
+2018-01-02,32,First aid kit,293.0400085,3.6,1,Oceania,Standard Class
+2018-01-02,32,Lawn mower,532.5800171,3.7,1,South Asia,Standard Class
+2018-01-03,61,First aid kit,293.0400085,3.5,1,Eastern Asia,Second Class
+2018-01-04,18,First aid kit,293.0400085,2.0,1,Oceania,Same Day
+2018-01-04,29,Men's gala suit,210.8500061,2.6,1,Eastern Asia,Second Class
+2018-01-04,17,Rock music,260.6499939,3.0,1,South Asia,First Class
+2018-01-05,62,Rock music,260.6499939,3.8,1,South Asia,Standard Class
+2018-01-06,9,Adult dog supplies,84.40000153,3.3,1,Southeast Asia,Standard Class
+2018-01-06,54,Rock music,260.6499939,3.2,1,Southeast Asia,First Class
+2018-01-07,63,Adult dog supplies,84.40000153,3.2,1,Oceania,Standard Class
+2018-01-08,61,Adult dog supplies,84.40000153,3.5,1,Oceania,First Class
+2018-01-09,60,Adult dog supplies,84.40000153,3.5,1,Eastern Asia,Standard Class
+2018-01-10,28,Adult dog supplies,84.40000152999998,3.2,1,Oceania,Second Class
+2018-01-10,31,Smart watch ,327.75,3.9,1,Southeast Asia,Standard Class
+2018-01-11,61,Smart watch ,327.75,3.3,1,South Asia,Second Class
+2018-01-12,64,Smart watch ,327.75,3.4,1,Oceania,First Class
+2018-01-13,31,Smart watch ,327.75,3.0,1,South Asia,Standard Class
+2018-01-13,28,Toys ,11.53999996,3.4,1,Southeast Asia,Standard Class
+2018-01-14,60,Toys ,11.53999996,3.4,1,Oceania,Standard Class
+2018-01-15,60,Toys ,11.53999996,3.8,1,Oceania,Standard Class
+2018-01-16,62,Toys ,11.53999996,3.5,1,Southeast Asia,Standard Class
+2018-01-17,26,Fighting video games,39.75,3.9,1,Southeast Asia,First Class
+2018-01-17,34,Toys ,11.53999996,3.8,1,Oceania,Second Class
+2018-01-18,63,Fighting video games,39.75,3.8,1,Southeast Asia,Standard Class
+2018-01-19,58,Fighting video games,39.75,3.6,1,Oceania,Standard Class
+2018-01-20,62,Fighting video games,39.75,3.8,1,Oceania,Standard Class
+2018-01-21,65,Fighting video games,39.75,3.3,1,South Asia,Standard Class
+2018-01-22,60,Fighting video games,39.75,3.1,1,Eastern Asia,Standard Class
+2018-01-23,60,Fighting video games,39.75,3.6,1,Eastern Asia,Standard Class
+2018-01-24,63,Fighting video games,39.75,4.0,1,Oceania,Standard Class
+2018-01-25,61,Fighting video games,39.75,3.2,1,South Asia,Same Day
+2018-01-26,27,Fighting video games,39.75,3.5,1,Oceania,First Class
+2018-01-26,37,Summer dresses,215.8200073,3.6,1,Eastern Asia,Standard Class
+2018-01-27,62,Summer dresses,215.8200073,3.8,1,Oceania,Standard Class
+2018-01-28,66,Summer dresses,215.8200073,3.2,1,Oceania,Standard Class
+2018-01-29,61,Summer dresses,215.8200073,3.8,1,Southeast Asia,Standard Class
+2018-01-30,60,Summer dresses,215.8200073,3.8,1,Southeast Asia,Standard Class
+2018-01-31,1,Fighting video games,39.75,1.0,1,Oceania,Same Day
+2018-01-31,1,Smart watch ,327.75,3.0,0,Southeast Asia,Standard Class
+2018-01-31,63,Summer dresses,215.8200073,3.7,1,Southeast Asia,Standard Class
+2018-01-31,1,Toys ,11.53999996,4.0,0,Southeast Asia,Standard Class
