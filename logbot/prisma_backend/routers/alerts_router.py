@@ -51,6 +51,10 @@ class ResolveAlertRequest(BaseModel):
     alert_type: Optional[str] = None
 
 
+class ResolveWithRestockRequest(BaseModel):
+    new_quantity: float
+
+
 # ─── Endpoints ───────────────────────────────────────────────────────────────
 
 @router.get("")
@@ -136,6 +140,32 @@ def resolve_alert_by_name(req: ResolveAlertRequest, db: Session = Depends(get_db
     alert.resolved_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "resolved", "product_name": req.product_name, "alert_type": alert.alert_type}
+
+
+@router.post("/{alert_id}/resolve-restock")
+def resolve_alert_with_restock(alert_id: str, req: ResolveWithRestockRequest, db: Session = Depends(get_db)):
+    """Resolve an alert and update the inventory quantity for the related product."""
+    alert = db.query(m.LogAlert).filter_by(id=alert_id).first()
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    sku = db.query(m.LogSKU).filter_by(id=alert.sku_id).first()
+    if sku:
+        inv = db.query(m.Inventory).filter_by(product_name=sku.name).first()
+        if inv:
+            inv.quantity = req.new_quantity
+            inv.last_updated = datetime.now(timezone.utc)
+
+    alert.resolved = True
+    alert.resolved_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {
+        "status": "resolved",
+        "alert_id": alert_id,
+        "new_quantity": req.new_quantity,
+        "product_name": sku.name if sku else None,
+    }
 
 
 @router.post("/{alert_id}/resolve", deprecated=True)

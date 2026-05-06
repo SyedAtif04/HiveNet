@@ -116,17 +116,19 @@ export const PriorityBadge = ({ level }) => {
   );
 };
 
-export const Modal = ({ open, onClose, title, children }) => {
+export const Modal = ({ open, onClose, title, children, size = 'md' }) => {
   if (!open) return null;
+  const widths = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl', '2xl': 'max-w-2xl' };
+  const maxW = widths[size] || 'max-w-md';
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-      <div className="relative z-10 w-full max-w-md bg-fb-card border border-fb-border rounded-2xl shadow-2xl fade-in" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-fb-border">
+      <div className={`relative z-10 w-full ${maxW} bg-fb-card border border-fb-border rounded-2xl shadow-2xl fade-in max-h-[90vh] flex flex-col`} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-fb-border flex-shrink-0">
           <h2 className="text-sm font-semibold text-fb-text">{title}</h2>
           <button onClick={onClose} className="text-fb-muted hover:text-fb-text transition-colors"><Icons.X /></button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

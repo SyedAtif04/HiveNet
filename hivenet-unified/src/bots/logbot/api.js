@@ -72,6 +72,10 @@ export async function resolveAlert(alertId) {
   return post(`/alerts/${alertId}/resolve`, {});
 }
 
+export async function resolveAlertWithRestock(alertId, newQuantity) {
+  return post(`/alerts/${alertId}/resolve-restock`, { new_quantity: newQuantity });
+}
+
 export async function createSKU(data) {
   return post('/inventory/skus', {
     name:             data.name,
@@ -167,11 +171,16 @@ export function buildSummary(stockItems, suppliers, alerts) {
   return { totalSKUs, criticalCount, lowStockCount, activeAlerts, inventoryValue, supplierCount, avgLeadTime };
 }
 
+let _sessionId = null;
+
 export async function fetchChatResponse(query) {
-  const r = await fetch(`${BASE}/chat?query=${encodeURIComponent(query)}`, {
-    method: 'POST',
+  const r = await fetch(`${BASE}/chat`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ query, session_id: _sessionId }),
   });
   if (!r.ok) throw new Error('Failed to get response');
-  const { response } = await r.json();
-  return response;
+  const data = await r.json();
+  if (data.session_id) _sessionId = data.session_id;
+  return data.response;
 }

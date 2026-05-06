@@ -3,81 +3,179 @@
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.database import get_db
-from core.models import Inventory, LogAlert
+from core.models import Inventory
+from services import chat_queries as cq
+from services import response_templates as rt
+from services.session import get_or_create_session, get_last_intent, save_turn
+from services import intent_router as ir
+from services.nlp import parse_query, fuzzy_match_sku
 
 router = APIRouter(prefix="", tags=["chat"])
 
 
 @router.post("/chat")
-async def chat(query: str, db: Session = Depends(get_db)):
-    """AI chat endpoint for logistics insights."""
-    response = _generate_logistics_response(query, db)
-    return {"response": response}
+async def chat(request: Request, db: Session = Depends(get_db)):
+    """Chat endpoint — accepts JSON body or legacy ?query= param."""
+    query_text = request.query_params.get("query", "")
+    session_id_in = None
+
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            query_text = body.get("query", query_text)
+            session_id_in = body.get("session_id")
+        except Exception:
+            pass
+
+    if not query_text:
+        return {"response": "Please provide a query.", "session_id": None}
+
+    session_id = get_or_create_session(session_id_in, "logbot", db)
+
+    last_intent = get_last_intent(session_id, db)
+    intent, data = _route_and_fetch(query_text, db, last_intent)
+
+    response = _render(intent, data)
+
+    save_turn(session_id, query_text, response, intent, db)
+    return {"response": response, "session_id": session_id}
 
 
-def _generate_logistics_response(query: str, db: Session) -> str:
-    """Generate response based on logistics data and query intent."""
-    query_lower = query.lower()
+# ─── Intent routing table ────────────────────────────────────────────────────
+
+_INTENT_KEYWORDS: list[tuple[str, list[str]]] = [
+    ("STOCKOUT_RISK", [
+        "stockout", "out of stock", "stock risk", "running out", "critical stock",
+        "at risk", "going to run out", "which items are at risk",
+    ]),
+    ("REORDER_DECISIONS", [
+        "reorder", "what to reorder", "purchase order", "order decisions",
+        "what needs to be ordered", "urgent order", "what should i order",
+    ]),
+    ("SUPPLIER_PERFORMANCE", [
+        "supplier", "vendor", "supplier performance", "reliable supplier",
+        "best supplier", "worst supplier", "lead time", "supplier ranking",
+    ]),
+    ("DEMAND_FORECAST", [
+        "demand forecast", "forecast", "predict demand", "projected demand",
+        "demand prediction", "future demand", "demand next",
+    ]),
+    ("ACTIVE_ALERTS", [
+        "active alerts", "alerts", "warnings", "supply chain alerts",
+        "show alerts", "critical alerts", "unresolved alerts",
+    ]),
+    ("OPTIMIZATION_METRICS", [
+        "safety stock", "eoq", "reorder point", "economic order quantity",
+        "optimization", "rop", "ss values", "optimization metrics",
+    ]),
+    ("SPECIFIC_SKU", [
+        "tell me about", "show me", "details for", "info on", "what about",
+        "how much stock", "stock level for",
+    ]),
+    ("INVENTORY_OVERVIEW", [
+        "inventory overview", "inventory summary", "total inventory",
+        "inventory status", "stock overview", "total skus", "all products",
+        "inventory", "stock", "products",
+    ]),
+]
+
+
+def _extract_sku_hint(query: str) -> str | None:
+    """Extract a potential product name from the query using regex trigger words."""
+    import re
+    m = re.search(r"\b(?:about|for|on|me|regarding|details?|info(?:rmation)?)\s+(.+)", query.lower())
+    return m.group(1).strip() if m else None
+
+
+def _detect_intent(query: str, last_intent: str | None, parsed=None) -> tuple[str, str | None]:
+    """Return (intent, sku_hint) using spaCy + semantic router + keyword fallback."""
+    if parsed is None:
+        parsed = parse_query(query)
+
+    # Follow-up detection via spaCy
+    if last_intent and parsed.is_followup:
+        return last_intent, None
+
+    # Try semantic router first
+    sku_hint = _extract_sku_hint(query)
+    # Also check spaCy entities for SKU hints
+    if parsed.entities and not sku_hint:
+        sku_hint = parsed.entities[0]
 
     try:
-        inventory = db.query(Inventory).all()
+        intent, confidence = ir.route(query)
+        if intent != "UNKNOWN":
+            if intent == "SPECIFIC_SKU" and not sku_hint:
+                pass  # fall through — can't do SPECIFIC_SKU without a product name
+            else:
+                return intent, sku_hint
     except Exception:
-        inventory = []
+        pass
 
-    try:
-        alerts = db.query(LogAlert).all()
-    except Exception:
-        alerts = []
+    # Keyword fallback
+    q = query.lower()
+    for intent, phrases in _INTENT_KEYWORDS:
+        if any(phrase in q for phrase in phrases):
+            if intent == "SPECIFIC_SKU" and not sku_hint:
+                continue
+            return intent, sku_hint
 
-    # Stock risk queries
-    if any(word in query_lower for word in ["stockout", "risk", "critical", "out of stock"]):
-        critical = [inv for inv in inventory if inv.quantity <= 0 or (inv.quantity and inv.reorder_point and inv.quantity <= inv.reorder_point)]
-        if critical:
-            msg = f"**{len(critical)} items** at risk:\n\n"
-            for i, inv in enumerate(critical[:3], 1):
-                msg += f"{i}. **{inv.product_name}** — Qty: {inv.quantity}, ROP: {inv.reorder_point or 'N/A'}\n"
-            return msg
-        return "No items at stockout risk currently."
+    return "UNKNOWN", sku_hint
 
-    # Demand/forecast queries
-    elif any(word in query_lower for word in ["demand", "forecast", "predict", "quarter", "month"]):
-        total_qty = sum(inv.quantity or 0 for inv in inventory)
-        return f"**Total inventory**: {total_qty:,.0f} units across {len(inventory)} SKUs. Check the Forecasts page for detailed demand projections."
 
-    # Reorder queries
-    elif any(word in query_lower for word in ["reorder", "order", "purchase", "decision"]):
-        low_stock = [inv for inv in inventory if inv.quantity and inv.reorder_point and inv.quantity < inv.reorder_point]
-        msg = f"**Items needing reorder**: {len(low_stock)}\n\n"
-        if low_stock:
-            for inv in low_stock[:3]:
-                msg += f"• {inv.product_name} — {inv.quantity} units (ROP: {inv.reorder_point})\n"
-        else:
-            msg += "All items are above reorder point."
-        return msg
+def _route_and_fetch(query: str, db: Session, last_intent: str | None) -> tuple[str, dict]:
+    """Detect intent, call the right query function, return (intent, data)."""
+    parsed = parse_query(query)
+    intent, sku_hint = _detect_intent(query, last_intent, parsed)
 
-    # Supplier queries
-    elif any(word in query_lower for word in ["supplier", "vendor", "performance"]):
-        return "Check the Inventory page for supplier details and performance metrics."
+    if intent == "STOCKOUT_RISK":
+        return intent, cq.query_stockout_risk(db)
+    if intent == "REORDER_DECISIONS":
+        return intent, cq.query_reorder_decisions(db)
+    if intent == "INVENTORY_OVERVIEW":
+        return intent, cq.query_inventory_overview(db)
+    if intent == "SUPPLIER_PERFORMANCE":
+        return intent, cq.query_supplier_performance(db)
+    if intent == "DEMAND_FORECAST":
+        return intent, cq.query_demand_forecast(db)
+    if intent == "ACTIVE_ALERTS":
+        return intent, cq.query_active_alerts(db)
+    if intent == "OPTIMIZATION_METRICS":
+        return intent, cq.query_optimization_metrics(db)
+    if intent == "SPECIFIC_SKU":
+        # Fuzzy-match the hint against known inventory names
+        if sku_hint:
+            known = [inv.product_name for inv in db.query(Inventory).all()]
+            matched = fuzzy_match_sku(sku_hint, known)
+            sku_hint = matched or sku_hint
+        return intent, cq.query_specific_sku(db, sku_hint or "")
+    return "UNKNOWN", {}
 
-    # SKU/inventory queries
-    elif any(word in query_lower for word in ["sku", "product", "inventory", "stock"]):
-        low_stock = [inv for inv in inventory if inv.quantity and inv.reorder_point and inv.quantity < inv.reorder_point]
-        msg = f"**Inventory Overview:**\n- Total SKUs: {len(inventory)}\n- Low stock: {len(low_stock)}\n"
-        if low_stock:
-            msg += f"\n**Items below reorder point:**\n"
-            for inv in low_stock[:3]:
-                msg += f"• {inv.product_name} — {inv.quantity} units\n"
-        return msg
 
-    # Default summary
-    else:
-        low_stock = [inv for inv in inventory if inv.quantity and inv.reorder_point and inv.quantity < inv.reorder_point]
-        critical = [inv for inv in inventory if inv.quantity and inv.quantity <= 0]
-        return f"**Supply Chain Summary:**\n- Total SKUs: {len(inventory)}\n- Critical items: {len(critical)}\n- Low stock: {len(low_stock)}\n\nAsk about stockout risks, reorders, forecasts, or inventory status."
+def _render(intent: str, data: dict) -> str:
+    """Dispatch to the correct template renderer."""
+    if intent == "STOCKOUT_RISK":
+        return rt.render_stockout_risk(data)
+    if intent == "REORDER_DECISIONS":
+        return rt.render_reorder_decisions(data)
+    if intent == "INVENTORY_OVERVIEW":
+        return rt.render_inventory_overview(data)
+    if intent == "SUPPLIER_PERFORMANCE":
+        return rt.render_supplier_performance(data)
+    if intent == "DEMAND_FORECAST":
+        return rt.render_demand_forecast(data)
+    if intent == "ACTIVE_ALERTS":
+        return rt.render_active_alerts(data)
+    if intent == "OPTIMIZATION_METRICS":
+        return rt.render_optimization_metrics(data)
+    if intent == "SPECIFIC_SKU":
+        return rt.render_specific_sku(data)
+    return rt.render_unknown()

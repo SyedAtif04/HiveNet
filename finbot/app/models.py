@@ -1,11 +1,10 @@
 import uuid
-from sqlalchemy import Column, String, Float, DateTime, Text, ForeignKey, Integer
+from sqlalchemy import Column, String, Float, DateTime, Text, ForeignKey, Integer, Index
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from datetime import datetime
 from app.database import Base
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
-import uuid
 
 
 class Transaction(Base):
@@ -51,3 +50,31 @@ class TransactionItem(Base):
     product_name = Column(String)
     quantity = Column(Integer)
     price = Column(Float)
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    bot = Column(String(20), nullable=False)   # 'finbot' or 'logbot'
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_active = Column(DateTime, default=datetime.utcnow)
+
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String(10), nullable=False)   # 'user' or 'assistant'
+    content = Column(Text, nullable=False)
+    intent = Column(String(50))                 # resolved intent, null for user turns
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("ChatSession", back_populates="messages")
+
+    __table_args__ = (
+        Index("idx_chat_messages_session", "session_id", "created_at"),
+    )

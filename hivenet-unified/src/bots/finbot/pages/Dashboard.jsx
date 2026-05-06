@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MOCK_ALERTS } from '../data.js';
-import { fetchSummary, fetchMonthly, fetchCategories, fetchPredictions } from '../api.js';
+import { fetchSummary, fetchMonthly, fetchCategories, fetchPredictions, fetchAlerts } from '../api.js';
 import { Card, CardHeader, StatCard, ActionCard, AlertRow, PredCard, fmt } from '@/components.jsx';
 import { Icons } from '@/icons.jsx';
 import { LineChart, DonutChart, SparkLine } from '@/charts.jsx';
@@ -12,18 +11,20 @@ export default function Dashboard({ onNavigate }) {
   const [timePeriod,    setTimePeriod]    = useState('6M');
   const [categories,    setCategories]    = useState([]);
   const [predictions,   setPredictions]   = useState(null);
+  const [alerts,        setAlerts]        = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(null);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchSummary(), fetchMonthly(), fetchCategories(), fetchPredictions()])
-      .then(([s, m, c, p]) => {
+    Promise.all([fetchSummary(), fetchMonthly(), fetchCategories(), fetchPredictions(), fetchAlerts()])
+      .then(([s, m, c, p, a]) => {
         setSummary(s);
         setMonthlyFull(m);
         setMonthly(m);
         setCategories(c);
         setPredictions(p);
+        setAlerts(a);
         setError(null);
       })
       .catch(e => setError(e.message))
@@ -100,9 +101,12 @@ export default function Dashboard({ onNavigate }) {
 
       <div className="grid grid-cols-3 gap-4">
         <Card className="col-span-2 p-5">
-          <CardHeader title="Alerts" subtitle={`${MOCK_ALERTS.length} active`}
+          <CardHeader title="Alerts" subtitle={alerts.length > 0 ? `${alerts.length} active` : 'No active alerts'}
             action={<span className="text-[10px] text-fb-accent cursor-pointer hover:underline">View all</span>} />
-          <div className="space-y-2">{MOCK_ALERTS.map(a => <AlertRow key={a.id} {...a} />)}</div>
+          {alerts.length > 0
+            ? <div className="space-y-2">{alerts.map((a, i) => <AlertRow key={i} level={a.level} message={a.message} time={a.time} />)}</div>
+            : <div className="flex items-center justify-center h-20 text-fb-muted text-xs">All financial metrics look healthy</div>
+          }
         </Card>
         <Card className="p-5">
           <CardHeader title="Quick Stats" />

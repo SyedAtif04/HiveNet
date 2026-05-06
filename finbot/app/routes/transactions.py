@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app import models, schemas
@@ -6,6 +6,11 @@ from datetime import datetime
 from fastapi import HTTPException
 from app.models import TransactionItem, Inventory
 from app.services.categorizer import categorize
+from app.services.finance import (
+    calculate_summary, monthly_summary, predict_financials,
+    generate_insights, format_finance_knowledge, get_embedding,
+)
+from app.models import KnowledgeBase
 
 router = APIRouter()
 
@@ -18,8 +23,30 @@ def get_db():
         db.close()
 
 
+def _refresh_knowledge_base():
+    """Recompute and replace the finance knowledge entry. Runs as a background task."""
+    db = SessionLocal()
+    try:
+        transactions = db.query(models.Transaction).all()
+        if not transactions:
+            return
+        summary = calculate_summary(transactions)
+        monthly = monthly_summary(transactions)
+        prediction = predict_financials(monthly)
+        insights = generate_insights(monthly)
+        content = format_finance_knowledge(summary, monthly, prediction, insights)
+        embedding = get_embedding(content)
+        db.query(KnowledgeBase).filter_by(source="finance").delete()
+        db.add(KnowledgeBase(content=content, source="finance", embedding=embedding))
+        db.commit()
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
 @router.post("/transactions")
-def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(get_db)):
+def create_transaction(data: schemas.TransactionCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     data_dict = data.dict(exclude_unset=True)
 
     # 👇 date parsing
@@ -77,7 +104,19 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
 
     db.commit()
 
+    background_tasks.add_task(_refresh_knowledge_base)
+
     return transaction
+
+@router.get("/inventory/items")
+def get_inventory_items(db: Session = Depends(get_db)):
+    """Return inventory items for autocomplete suggestions."""
+    items = db.query(Inventory).filter(Inventory.product_name.isnot(None)).all()
+    return [
+        {"product_name": i.product_name, "unit_price": i.unit_price or 0, "quantity": i.quantity or 0}
+        for i in items
+    ]
+
 
 @router.get("/transactions")
 def get_transactions(db: Session = Depends(get_db)):

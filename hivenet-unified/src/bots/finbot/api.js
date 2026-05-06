@@ -80,6 +80,12 @@ export async function fetchPredictions() {
   };
 }
 
+export async function fetchInventoryItems() {
+  const r = await fetch(`${BASE}/inventory/items`);
+  if (!r.ok) return [];
+  return r.json();
+}
+
 export async function fetchTransactions() {
   const r = await fetch(`${BASE}/transactions`);
   if (!r.ok) throw new Error('Failed to load transactions');
@@ -111,13 +117,19 @@ export async function fetchTransactionItems(transactionId) {
 }
 
 export async function postTransaction(form) {
+  const items = (form.items || []).map(i => ({
+    product_name: i.product_name,
+    quantity:     parseFloat(i.quantity),
+    price:        parseFloat(i.price),
+  }));
+  const amount = items.reduce((s, i) => s + i.quantity * i.price, 0);
   const body = {
     type:        form.type.toLowerCase(),
-    amount:      parseFloat(form.amount),
-    category:    form.category,
+    amount,
+    category:    form.category || '',
     description: form.description || '',
     date:        form.date,
-    items:       [],
+    items,
   };
   const r = await fetch(`${BASE}/transactions`, {
     method:  'POST',
@@ -131,13 +143,24 @@ export async function postTransaction(form) {
   return r.json();
 }
 
+let _sessionId = null;
+
 export async function fetchChatResponse(query) {
-  const r = await fetch(`${BASE}/chat?query=${encodeURIComponent(query)}`, {
-    method: 'POST',
+  const r = await fetch(`${BASE}/chat`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ query, session_id: _sessionId }),
   });
   if (!r.ok) throw new Error('Failed to get response');
-  const { response } = await r.json();
-  return response;
+  const data = await r.json();
+  if (data.session_id) _sessionId = data.session_id;
+  return data.response;
+}
+
+export async function fetchAlerts() {
+  const r = await fetch(`${BASE}/summary/alerts`);
+  if (!r.ok) throw new Error('Failed to load alerts');
+  return r.json();
 }
 
 export async function fetchKnowledgeSearch(query) {
