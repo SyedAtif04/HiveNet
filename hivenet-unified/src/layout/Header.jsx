@@ -29,7 +29,7 @@ export default function Header() {
 
       <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-fb-card2 border border-fb-border">
         <div className="w-1.5 h-1.5 rounded-full bg-fb-green"></div>
-        <span className="text-xs text-fb-muted">MJ College Pvt Ltd</span>
+        <span className="text-xs text-fb-muted">SPORTS INFRA</span>
       </div>
 
       <button className="relative w-8 h-8 rounded-lg bg-fb-card2 border border-fb-border flex items-center justify-center text-fb-muted hover:text-fb-accent hover:border-fb-accent/40 transition-colors">

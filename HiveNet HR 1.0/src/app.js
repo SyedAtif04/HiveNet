@@ -2,10 +2,12 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 
-const uploadRoutes = require('./routes/uploadRoutes');
-const shiftRoutes = require('./routes/shiftRoutes');
-const rosterRoutes = require('./routes/rosterRoutes');
-const testRoute = require('./routes/testRoute');
+const uploadRoutes  = require('./routes/uploadRoutes');
+const shiftRoutes   = require('./routes/shiftRoutes');
+const rosterRoutes  = require('./routes/rosterRoutes');
+const summaryRoutes = require('./routes/summaryRoutes');
+const chatRoutes    = require('./routes/chatRoutes');
+const testRoute     = require('./routes/testRoute');
 
 const app = express();
 
@@ -16,6 +18,8 @@ app.use(express.json());
 app.use('/api/upload', uploadRoutes);
 app.use('/api/upload/shifts', shiftRoutes);
 app.use('/api/roster', rosterRoutes);
+app.use('/api/summary', summaryRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/test', testRoute);
 
 app.get('/', (_req, res) => {
