@@ -21,6 +21,7 @@ import LogAlerts    from './logbot/pages/Alerts.jsx';
 import HRDashboard from './hrbot/pages/Dashboard.jsx';
 import HRRoster    from './hrbot/pages/Roster.jsx';
 import HRUpload    from './hrbot/pages/Upload.jsx';
+import HRAIAssistant from './hrbot/pages/AIAssistant.jsx';
 
 export const BOTS = {
   finbot: {
@@ -53,6 +54,7 @@ export const BOTS = {
       dashboard: HRDashboard,
       roster:    HRRoster,
       upload:    HRUpload,
+      ai:        HRAIAssistant,
     },
   },
 };

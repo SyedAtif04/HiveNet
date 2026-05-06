@@ -50,7 +50,7 @@ export default function Sidebar({ active, onNavigate }) {
           </div>
           <div className="min-w-0">
             <div className="text-xs font-medium text-fb-text truncate">Admin User</div>
-            <div className="text-[10px] text-fb-muted truncate">MJ College</div>
+            <div className="text-[10px] text-fb-muted truncate">SPORTS INFRA</div>
           </div>
         </div>
       </div>
