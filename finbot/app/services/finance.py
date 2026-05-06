@@ -197,27 +197,61 @@ def parse_date(date_str):
     raise ValueError(f"Date format not recognized: {date_str}")
 
 def format_finance_knowledge(summary, monthly, prediction, insights):
-    monthly_text = "\n".join([
-        f"{m['month']} → Income: {m['income']}, Expense: {m['expense']}"
-        for m in monthly
+    inc  = summary['total_income']
+    exp  = summary['total_expense']
+    prof = summary['profit']
+    margin = round((prof / inc * 100) if inc else 0, 1)
+
+    # Monthly performance lines
+    monthly_lines = []
+    for m in monthly:
+        p = m['income'] - m['expense']
+        sign = "+" if p >= 0 else ""
+        flag = " ⚠ LOSS" if p < 0 else ""
+        monthly_lines.append(
+            f"  {m['month']}: Income ₹{m['income']:,.0f} | Expenses ₹{m['expense']:,.0f} | Profit {sign}₹{p:,.0f}{flag}"
+        )
+
+    # Trend summary
+    loss_months = [m for m in monthly if m['income'] < m['expense']]
+    best  = max(monthly, key=lambda m: m['income'] - m['expense'], default=None)
+    worst = min(monthly, key=lambda m: m['income'] - m['expense'], default=None)
+
+    trend_lines = []
+    if best:
+        trend_lines.append(f"  Best month:  {best['month']} (profit ₹{best['income']-best['expense']:,.0f})")
+    if worst:
+        trend_lines.append(f"  Worst month: {worst['month']} (profit ₹{worst['income']-worst['expense']:,.0f})")
+    if loss_months:
+        trend_lines.append(f"  Loss months: {', '.join(m['month'] for m in loss_months)} ({len(loss_months)} of {len(monthly)})")
+
+    # Forecast
+    nm = prediction['next_month']
+    forecast_lines = [
+        f"  Projected Income:   ₹{nm['income']:,.0f}",
+        f"  Projected Expenses: ₹{nm['expense']:,.0f}",
+        f"  Projected Profit:   ₹{nm['profit']:,.0f}",
+        f"  Method: {prediction.get('method', 'linear')}",
+    ]
+
+    text = "\n".join([
+        "=== FINANCIAL HEALTH REPORT ===\n",
+        "SUMMARY",
+        f"  Total Income:   ₹{inc:,.2f}",
+        f"  Total Expenses: ₹{exp:,.2f}",
+        f"  Net Profit:     ₹{prof:,.2f}",
+        f"  Profit Margin:  {margin}%\n",
+        "MONTHLY PERFORMANCE",
+        *monthly_lines,
+        "",
+        "TRENDS",
+        *trend_lines,
+        "",
+        "FORECAST (Next Month)",
+        *forecast_lines,
+        "",
+        "KEY INSIGHTS",
+        *[f"  - {i}" for i in insights],
     ])
 
-    text = f"""
-Financial Summary:
-Income: {summary['total_income']}
-Expense: {summary['total_expense']}
-Profit: {summary['profit']}
-
-Monthly Breakdown:
-{monthly_text}
-
-Prediction (Next Month):
-Income: {prediction['next_month']['income']:.2f}
-Expense: {prediction['next_month']['expense']:.2f}
-Profit: {prediction['next_month']['profit']:.2f}
-
-Insights:
-{"; ".join(insights)}
-    """
-
-    return text.strip()
+    return text

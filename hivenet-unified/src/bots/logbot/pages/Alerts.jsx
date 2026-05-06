@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react';
-import { fetchAlerts, runAlertCheck, resolveAlert, fetchDecisions, alertLevel, timeAgo } from '../api.js';
+import { useState, useEffect, useRef } from 'react';
+import { fetchAlerts, runAlertCheck, resolveAlert, resolveAlertWithRestock, fetchDecisions, alertLevel, timeAgo } from '../api.js';
 import { Card, CardHeader, AlertRow, PriorityBadge } from '@/components.jsx';
 import { Icons } from '@/icons.jsx';
 
 const LEVEL_FILTERS = ['All', 'error', 'warning', 'info'];
 
 export default function Alerts() {
-  const [alerts,    setAlerts]    = useState([]);
-  const [decisions, setDecisions] = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [checking,  setChecking]  = useState(false);
-  const [error,     setError]     = useState(null);
-  const [filter,    setFilter]    = useState('All');
-  const [checkMsg,  setCheckMsg]  = useState(null);
+  const [alerts,        setAlerts]        = useState([]);
+  const [decisions,     setDecisions]     = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [checking,      setChecking]      = useState(false);
+  const [error,         setError]         = useState(null);
+  const [filter,        setFilter]        = useState('All');
+  const [checkMsg,      setCheckMsg]      = useState(null);
+  const [resolveDialog, setResolveDialog] = useState(null); // alert object or null
+  const [restockQty,    setRestockQty]    = useState('');
+  const [resolving,     setResolving]     = useState(false);
+  const qtyInputRef = useRef(null);
 
   const loadData = () => {
     setLoading(true);
@@ -37,12 +41,29 @@ export default function Alerts() {
     }
   };
 
-  const handleResolve = async (alertId) => {
+  const openResolveDialog = (alert) => {
+    setResolveDialog(alert);
+    setRestockQty('');
+    setTimeout(() => qtyInputRef.current?.focus(), 50);
+  };
+
+  const closeResolveDialog = () => {
+    setResolveDialog(null);
+    setRestockQty('');
+  };
+
+  const handleResolveWithRestock = async () => {
+    const qty = parseFloat(restockQty);
+    if (isNaN(qty) || qty < 0) return;
+    setResolving(true);
     try {
-      await resolveAlert(alertId);
-      setAlerts(prev => prev.filter(a => a.id !== alertId));
+      await resolveAlertWithRestock(resolveDialog.id, qty);
+      setAlerts(prev => prev.filter(a => a.id !== resolveDialog.id));
+      closeResolveDialog();
     } catch (e) {
       console.error('Resolve failed:', e.message);
+    } finally {
+      setResolving(false);
     }
   };
 
@@ -59,6 +80,39 @@ export default function Alerts() {
 
   return (
     <div className="space-y-5">
+      {resolveDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeResolveDialog}>
+          <div className="card-glass border border-fb-border rounded-2xl p-6 w-80 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-fb-text mb-1">Resolve Alert</h3>
+            <p className="text-xs text-fb-muted mb-4 leading-relaxed">{resolveDialog.message}</p>
+
+            <label className="block text-xs text-fb-muted mb-1.5">New quantity after restock</label>
+            <input
+              ref={qtyInputRef}
+              type="number"
+              min="0"
+              step="1"
+              value={restockQty}
+              onChange={e => setRestockQty(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleResolveWithRestock(); if (e.key === 'Escape') closeResolveDialog(); }}
+              placeholder="Enter quantity…"
+              className="w-full bg-fb-card2 border border-fb-border rounded-lg px-3 py-2 text-sm text-fb-text placeholder-fb-muted focus:outline-none focus:border-fb-accent/60 mb-4"
+            />
+
+            <div className="flex gap-2">
+              <button onClick={closeResolveDialog}
+                className="flex-1 px-3 py-2 rounded-lg text-xs font-medium border border-fb-border bg-fb-card2 text-fb-muted hover:border-fb-accent/40 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleResolveWithRestock} disabled={resolving || restockQty === '' || isNaN(parseFloat(restockQty))}
+                className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold btn-primary disabled:opacity-40 transition-colors">
+                {resolving ? 'Saving…' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-3">
         {[
           ['Critical / Error', counts.error,   'text-fb-red',    'bg-fb-red-dim',    'border-fb-red/20'   ],
@@ -105,7 +159,7 @@ export default function Alerts() {
                       <div className="flex-1">
                         <AlertRow level={alertLevel(a.severity)} message={a.message} time={timeAgo(a.triggered_at)} />
                       </div>
-                      <button onClick={() => handleResolve(a.id)}
+                      <button onClick={() => openResolveDialog(a)}
                         className="mt-1 flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium border bg-fb-card2 border-fb-border text-fb-muted hover:border-fb-accent/50 hover:text-fb-accent transition-colors">
                         Resolve
                       </button>

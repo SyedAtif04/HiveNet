@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
-import { fetchTransactions, fetchTransactionItems, postTransaction } from '../api.js';
+import { useState, useEffect, useRef } from 'react';
+import { fetchTransactions, fetchTransactionItems, postTransaction, fetchInventoryItems } from '../api.js';
 import { Card, StatCard, Badge, Modal, Field, Input, Select, fmt } from '@/components.jsx';
 import { Icons } from '@/icons.jsx';
 
-const CATEGORIES = ['Sales', 'Salaries', 'Marketing', 'Operations', 'Software', 'Services', 'Other'];
+const CATEGORIES = ['', 'Sales', 'Salaries', 'Marketing', 'Operations', 'Raw Materials', 'Finished Goods', 'Packaging', 'Logistics', 'Utilities', 'Office', 'Other'];
+
+const emptyLine = () => ({ id: Date.now() + Math.random(), product_name: '', quantity: '', price: '' });
 
 export default function Transactions() {
   const [rows,        setRows]        = useState([]);
@@ -15,11 +17,53 @@ export default function Transactions() {
   const [filterType,  setFilter]      = useState('All');
   const [search,      setSearch]      = useState('');
   const [modal,       setModal]       = useState(false);
-  const [form,        setForm]        = useState({ type: 'Income', amount: '', category: 'Sales', description: '', date: '' });
+  const [form,        setForm]        = useState({ type: 'Income', category: '', description: '', date: '' });
+  const [lineItems,   setLineItems]   = useState([emptyLine()]);
   const [formError,   setFormError]   = useState('');
-  const [itemsModal,  setItemsModal]  = useState(false);
-  const [items,       setItems]       = useState([]);
-  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsModal,    setItemsModal]    = useState(false);
+  const [items,         setItems]         = useState([]);
+  const [itemsLoading,  setItemsLoading]  = useState(false);
+  const [invItems,      setInvItems]      = useState([]);
+  const [suggestions,   setSuggestions]   = useState({});   // { lineId: [matches] }
+  const suggestRef = useRef({});
+
+  const invoiceTotal = lineItems.reduce((s, i) => {
+    const qty = parseFloat(i.quantity) || 0;
+    const prc = parseFloat(i.price) || 0;
+    return s + qty * prc;
+  }, 0);
+
+  const updateLine = (id, field, value) =>
+    setLineItems(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l));
+
+  const addLine = () => setLineItems(prev => [...prev, emptyLine()]);
+
+  const removeLine = (id) => setLineItems(prev => prev.length > 1 ? prev.filter(l => l.id !== id) : prev);
+
+  const openModal = () => {
+    setFormError('');
+    setForm({ type: 'Income', category: '', description: '', date: '' });
+    setLineItems([emptyLine()]);
+    setSuggestions({});
+    setModal(true);
+    fetchInventoryItems().then(setInvItems).catch(() => {});
+  };
+
+  const handleNameChange = (id, value) => {
+    updateLine(id, 'product_name', value);
+    if (value.trim().length < 1) { setSuggestions(s => ({ ...s, [id]: [] })); return; }
+    const matches = invItems.filter(i =>
+      i.product_name.toLowerCase().includes(value.toLowerCase())
+    ).slice(0, 6);
+    setSuggestions(s => ({ ...s, [id]: matches }));
+  };
+
+  const pickSuggestion = (lineId, item) => {
+    setLineItems(prev => prev.map(l =>
+      l.id === lineId ? { ...l, product_name: item.product_name, price: item.unit_price > 0 ? String(item.unit_price) : l.price } : l
+    ));
+    setSuggestions(s => ({ ...s, [lineId]: [] }));
+  };
 
   const loadTransactions = () => {
     setLoading(true);
@@ -72,13 +116,14 @@ export default function Transactions() {
   };
 
   const handleAdd = async () => {
-    if (!form.amount || !form.date) { setFormError('Amount and date are required.'); return; }
+    const validLines = lineItems.filter(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && parseFloat(l.price) > 0);
+    if (validLines.length === 0) { setFormError('Add at least one item with name, quantity, and price.'); return; }
+    if (!form.date) { setFormError('Date is required.'); return; }
     setFormError('');
     setSaving(true);
     try {
-      await postTransaction(form);
+      await postTransaction({ ...form, items: validLines });
       setModal(false);
-      setForm({ type: 'Income', amount: '', category: 'Sales', description: '', date: '' });
       loadTransactions();
     } catch (e) {
       setFormError(e.message);
@@ -113,7 +158,7 @@ export default function Transactions() {
               </button>
             ))}
           </div>
-          <button onClick={() => { setFormError(''); setModal(true); }} className="flex items-center gap-2 px-4 py-2 rounded-lg btn-primary text-xs">
+          <button onClick={openModal} className="flex items-center gap-2 px-4 py-2 rounded-lg btn-primary text-xs">
             <Icons.Plus size={14} /> Add Transaction
           </button>
         </div>
@@ -150,30 +195,140 @@ export default function Transactions() {
         {!loading && !error && <div className="px-4 py-3 border-t border-fb-border text-xs text-fb-muted">Showing {filtered.length} of {rows.length} transactions</div>}
       </Card>
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Add Transaction">
-        <div className="space-y-4">
+      <Modal open={modal} onClose={() => setModal(false)} title="New Invoice" size="xl">
+        <div className="space-y-5">
+
+          {/* Type selector — full width, tall buttons */}
           <Field label="Type">
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {['Income', 'Expense'].map(t => (
                 <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${form.type === t ? (t === 'Income' ? 'bg-fb-green-dim border-fb-green text-fb-green' : 'bg-fb-red-dim border-fb-red text-fb-red') : 'border-fb-border text-fb-muted hover:border-fb-dim'}`}>
+                  className={`py-3 rounded-xl text-sm font-bold border-2 transition-all ${
+                    form.type === t
+                      ? t === 'Income' ? 'bg-fb-green-dim border-fb-green text-fb-green' : 'bg-fb-red-dim border-fb-red text-fb-red'
+                      : 'border-fb-border text-fb-muted hover:border-fb-dim'
+                  }`}>
                   {t}
                 </button>
               ))}
             </div>
           </Field>
-          <Field label="Amount"><Input type="number" placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></Field>
+
+          {/* Date + Description row */}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date (dd-mm-yyyy)">
+              <Input placeholder="dd-mm-yyyy" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            </Field>
+            <Field label="Description">
+              <Input placeholder="Invoice description…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            </Field>
+          </div>
+
+          {/* Category */}
           <Field label="Category">
             <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {CATEGORIES.map(c => <option key={c} value={c}>{c || 'Auto-detect from items'}</option>)}
             </Select>
           </Field>
-          <Field label="Description"><Input placeholder="Brief description…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></Field>
-          <Field label="Date (dd-mm-yyyy)"><Input placeholder="dd-mm-yyyy" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Field>
+
+          {/* Items List */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-semibold text-fb-muted uppercase tracking-wider">Items List</span>
+              <button onClick={addLine} className="flex items-center gap-1 text-[10px] text-fb-accent hover:underline">
+                <Icons.Plus size={11} /> Add item
+              </button>
+            </div>
+
+            {/* Column headers: Product | Qty | Unit Price | Qty Total | × */}
+            <div className="grid grid-cols-[1fr_70px_110px_100px_28px] gap-2 mb-2 px-1">
+              {['Product / Service', 'Qty', 'Unit Price (₹)', 'Qty Total', ''].map(h => (
+                <span key={h} className="text-[10px] text-fb-muted uppercase tracking-wider">{h}</span>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              {lineItems.map(line => {
+                const lineTotal = (parseFloat(line.quantity) || 0) * (parseFloat(line.price) || 0);
+                const suggs = suggestions[line.id] || [];
+                return (
+                  <div key={line.id} className="grid grid-cols-[1fr_70px_110px_100px_28px] gap-2 items-start">
+
+                    {/* Product name with autocomplete */}
+                    <div className="relative">
+                      <input
+                        value={line.product_name}
+                        onChange={e => handleNameChange(line.id, e.target.value)}
+                        onBlur={() => setTimeout(() => setSuggestions(s => ({ ...s, [line.id]: [] })), 150)}
+                        placeholder="Item name…"
+                        className="w-full bg-fb-card2 border border-fb-border rounded-lg px-3 py-2.5 text-xs text-fb-text placeholder-fb-dim outline-none focus:border-fb-accent/60 transition-colors"
+                      />
+                      {suggs.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-fb-card border border-fb-border rounded-lg shadow-xl overflow-hidden">
+                          {suggs.map(s => (
+                            <button key={s.product_name} onMouseDown={() => pickSuggestion(line.id, s)}
+                              className="w-full text-left px-3 py-2 text-xs text-fb-text hover:bg-fb-card2 transition-colors flex items-center justify-between gap-2">
+                              <span className="truncate">{s.product_name}</span>
+                              <span className="text-[10px] text-fb-muted flex-shrink-0">
+                                {s.quantity > 0 ? `${s.quantity} in stock` : 'out of stock'}
+                                {s.unit_price > 0 ? ` · ₹${s.unit_price}` : ''}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Qty */}
+                    <input
+                      type="number" min="0"
+                      value={line.quantity}
+                      onChange={e => updateLine(line.id, 'quantity', e.target.value)}
+                      placeholder="0"
+                      className="bg-fb-card2 border border-fb-border rounded-lg px-2 py-2.5 text-xs text-fb-text placeholder-fb-dim outline-none focus:border-fb-accent/60 transition-colors text-center"
+                    />
+
+                    {/* Unit Price */}
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={line.price}
+                      onChange={e => updateLine(line.id, 'price', e.target.value)}
+                      placeholder="0.00"
+                      className="bg-fb-card2 border border-fb-border rounded-lg px-3 py-2.5 text-xs text-fb-text placeholder-fb-dim outline-none focus:border-fb-accent/60 transition-colors text-right"
+                    />
+
+                    {/* Qty Total */}
+                    <div className="flex items-center justify-end h-[38px]">
+                      <span className={`text-xs font-mono font-semibold ${lineTotal > 0 ? (form.type === 'Income' ? 'text-fb-green' : 'text-fb-red') : 'text-fb-dim'}`}>
+                        {lineTotal > 0 ? `₹${lineTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
+                      </span>
+                    </div>
+
+                    {/* Remove */}
+                    <button onClick={() => removeLine(line.id)}
+                      className="w-7 h-[38px] flex items-center justify-center rounded text-fb-dim hover:text-fb-red hover:bg-fb-red-dim transition-colors">
+                      <Icons.X size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Invoice Total */}
+            <div className="flex justify-end items-center gap-3 mt-4 pt-4 border-t border-fb-border">
+              <span className="text-sm text-fb-muted">Invoice Total</span>
+              <span className={`text-2xl font-bold font-mono ${form.type === 'Income' ? 'text-fb-green' : 'text-fb-red'}`}>
+                ₹{invoiceTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
           {formError && <p className="text-xs text-fb-red">{formError}</p>}
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setModal(false)} className="flex-1 py-2.5 rounded-lg btn-ghost text-sm">Cancel</button>
-            <button onClick={handleAdd} disabled={saving} className="flex-1 py-2.5 rounded-lg btn-primary text-sm disabled:opacity-50">
+
+          <div className="flex gap-3 pt-1">
+            <button onClick={() => setModal(false)} className="flex-1 py-3 rounded-xl btn-ghost text-sm">Cancel</button>
+            <button onClick={handleAdd} disabled={saving || invoiceTotal === 0}
+              className="flex-1 py-3 rounded-xl btn-primary text-sm font-semibold disabled:opacity-50">
               {saving ? 'Saving…' : 'Save Transaction'}
             </button>
           </div>
